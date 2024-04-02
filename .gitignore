@@ -19,3 +19,8 @@
 
 # Go workspace file
 go.work
+
+*.toml
+*.log
+configx/conf
+logx/log
