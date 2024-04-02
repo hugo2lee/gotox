@@ -21,16 +21,8 @@ func (c *ConfigCli) Addr() string {
 }
 
 // redis config
-func (c *ConfigCli) RedisAddr() string {
-	return c.viper.GetString("redis.addr")
-}
-
-func (c *ConfigCli) RedisPassword() string {
-	return c.viper.GetString("redis.password")
-}
-
-func (c *ConfigCli) RedisDb() int {
-	return c.viper.GetInt("redis.db")
+func (c *ConfigCli) RedisUrl() string {
+	return c.viper.GetString("redis.url")
 }
 
 // mysql config
