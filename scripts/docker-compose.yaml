@@ -24,3 +24,14 @@ services:
       --requirepass 'root'
     ports:
       - '6379:6379'
+        
+  mongo:
+    image: mongo:latest
+    # restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    command:
+      --auth
+    ports:
+      - '27017:27017'
