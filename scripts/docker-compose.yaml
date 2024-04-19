@@ -1,0 +1,26 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:latest
+    # restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      # 如果sql文件没有指定数据库要这里指定
+      MYSQL_DATABASE: dev
+      TZ: Asia/Shanghai
+    # volumes:
+    #   - ./debug.sql:/docker-entrypoint-initdb.d/debug.sql
+    ports:
+      - '3306:3306'
+
+  redis:
+    image: redis:alpine
+    # restart: always
+    # environment:
+    # 空密码
+    # - ALLOW_EMPTY_PASSWORD=yes
+    # command: ["--requirepass", "root"]
+    command: 
+      --requirepass 'root'
+    ports:
+      - '6379:6379'
