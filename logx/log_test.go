@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-19 19:57
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-02 14:29
+ * @LastEditTime: 2024-04-19 16:44
  * @FilePath: \gotox\logx\log_test.go
  * @Description:
  *
@@ -18,7 +18,7 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	conf := configx.New(configx.WithPath("../configx/conf"))
+	conf := configx.New(configx.WithPath("../conf"))
 	logger := logx.New(conf)
 
 	// build random log for check max size

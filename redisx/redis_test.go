@@ -1,3 +1,13 @@
+/*
+ * @Author: hugo
+ * @Date: 2024-04-17 17:16
+ * @LastEditors: hugo
+ * @LastEditTime: 2024-04-19 16:51
+ * @FilePath: \gotox\redisx\redis_test.go
+ * @Description:
+ *
+ * Copyright (c) 2024 by hugo, All Rights Reserved.
+ */
 package redisx_test
 
 import (
@@ -13,7 +23,7 @@ import (
 
 func TestRedis(t *testing.T) {
 	t.Parallel()
-	conf := configx.New(configx.WithPath("../configx/conf"))
+	conf := configx.New(configx.WithPath("../conf"))
 	logger := logx.New(conf)
 	cli, err := redisx.New(conf, logger)
 
