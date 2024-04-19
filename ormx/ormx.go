@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 16:24
+ * @LastEditTime: 2024-04-19 17:40
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -16,18 +16,21 @@ import (
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
+	"github.com/hugo2lee/gotox/serverx"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
-type Orm struct {
+var _ serverx.Resource = (*orm)(nil)
+
+type orm struct {
 	gorm   *gorm.DB
 	logger logx.Logger
 }
 
-func New(conf *configx.ConfigCli, logCli logx.Logger) (*Orm, error) {
+func New(conf *configx.ConfigCli, logCli logx.Logger) (*orm, error) {
 	dsn := conf.MysqlDsn()
 	if dsn == "" {
 		return nil, errors.New("mysql dsn is empty")
@@ -57,18 +60,18 @@ func New(conf *configx.ConfigCli, logCli logx.Logger) (*Orm, error) {
 		db = db.Debug()
 	}
 
-	return &Orm{db, logCli}, nil
+	return &orm{db, logCli}, nil
 }
 
-func (c *Orm) DB() *gorm.DB {
+func (c *orm) DB() *gorm.DB {
 	return c.gorm
 }
 
-func (c *Orm) Name() string {
+func (c *orm) Name() string {
 	return "orm"
 }
 
-func (c *Orm) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *orm) Close(ctx context.Context, wg *sync.WaitGroup) {
 	db, err := c.gorm.DB()
 	if err != nil {
 		c.logger.Error("gorm DB get %v", err)
