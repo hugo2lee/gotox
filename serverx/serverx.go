@@ -43,11 +43,6 @@ func New(conf *configx.ConfigCli, log logx.Logger) *Server {
 	}
 }
 
-// 启用http服务
-func (s *Server) Run() error {
-	return s.Engine.Run(s.addr)
-}
-
 func (s *Server) AddResource(res ...Resource) {
 	s.resources = append(s.resources, res...)
 }
@@ -70,6 +65,11 @@ func (s *Server) CloseResource(ctx context.Context) {
 	case <-wgChan:
 		s.logger.Info("all resource close")
 	}
+}
+
+// 启用http服务
+func (s *Server) Run() error {
+	return s.Engine.Run(s.addr)
 }
 
 func (s *Server) GracefullyUp() {
@@ -110,10 +110,12 @@ func (s *Server) GracefullyUp() {
 	}
 
 	{
-		// 资源带超时关闭
-		resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer resourceCancel()
-		s.CloseResource(resourceCtx)
+		if len(s.resources) != 0 {
+			// 资源带超时关闭
+			resourceCtx, resourceCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer resourceCancel()
+			s.CloseResource(resourceCtx)
+		}
 	}
 
 	s.logger.Info("Server exiting")

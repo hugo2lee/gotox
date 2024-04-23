@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:17
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 17:49
+ * @LastEditTime: 2024-04-23 19:20
  * @FilePath: \gotox\serverx\serverx_test.go
  * @Description:
  *
@@ -12,6 +12,9 @@ package serverx_test
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -62,4 +65,16 @@ func Test_ServerUp(t *testing.T) {
 	svr.AddResource(db, rds, mongo)
 
 	svr.GracefullyUp()
+}
+
+func Test_ServerEnableAccessLog(t *testing.T) {
+	conf := configx.New(configx.WithPath("../conf"))
+	logger := logx.New(conf)
+
+	recorder := httptest.NewRecorder()
+
+	svr := serverx.New(conf, logger).EnableAccessLog()
+	svr.Engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	log.Printf("resp %v \n", recorder.Body.String())
 }
