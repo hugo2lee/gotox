@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-14 15:44
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-02 14:08
+ * @LastEditTime: 2024-04-23 19:32
  * @FilePath: \gotox\logx\log.go
  * @Description:
  *
@@ -77,4 +77,9 @@ func (l *logCli) Warn(msg string, args ...any) {
 
 func (l *logCli) Error(msg string, args ...any) {
 	l.logger.Sugar().Errorf(msg, args...)
+}
+
+// 这里是为了包变量Log初始化
+func init() {
+	Log = NewNoOpLogger()
 }

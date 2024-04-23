@@ -12,6 +12,8 @@
 // 无任何依赖的包变量logger，适用于直接导包的场景，解决实例化结构体没logger的问题
 package logx
 
+import "log"
+
 var _ Logger = (*NoOpLogger)(nil)
 
 type NoOpLogger struct{}
@@ -20,13 +22,18 @@ func NewNoOpLogger() Logger {
 	return &NoOpLogger{}
 }
 
-func (n *NoOpLogger) Debug(msg string, args ...any) {}
+func (n *NoOpLogger) Debug(msg string, args ...any) {
+	log.Println(msg, args)
+}
 
 func (n *NoOpLogger) Info(msg string, args ...any) {
+	log.Println(msg, args)
 }
 
 func (n *NoOpLogger) Warn(msg string, args ...any) {
+	log.Println(msg, args)
 }
 
 func (n *NoOpLogger) Error(msg string, args ...any) {
+	log.Println(msg, args)
 }
