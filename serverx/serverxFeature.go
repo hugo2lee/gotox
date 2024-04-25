@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 18:02
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 19:30
+ * @LastEditTime: 2024-04-25 20:31
  * @FilePath: \gotox\serverx\serverxFeature.go
  * @Description:
  *
@@ -13,6 +13,7 @@ package serverx
 import (
 	"context"
 
+	"github.com/hugo2lee/gotox/webx"
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
 	"github.com/hugo2lee/gotox/webx/middleware/auth"
 
@@ -29,6 +30,7 @@ func (s *Server) EnableAccessLog() *Server {
 }
 
 func (s *Server) EnableAuth() *Server {
+	auth.SetLogger(s.logger)
 	aus := s.configer.Auths()
 	authList := make(auth.AuthPair, len(aus))
 	for name, au := range aus {
@@ -36,6 +38,11 @@ func (s *Server) EnableAuth() *Server {
 	}
 	md := auth.NewMiddlewareBuilder(authList).Build()
 	s.Engine.Use(md)
+	return s
+}
+
+func (s *Server) EnableWrapLog() *Server {
+	webx.SetLogger(s.logger)
 	return s
 }
 
