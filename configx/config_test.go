@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-12 15:28
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-02 14:00
+ * @LastEditTime: 2024-04-25 16:55
  * @FilePath: \gotox\configx\config_test.go
  * @Description:
  *
@@ -31,4 +31,7 @@ func TestConfigExample(t *testing.T) {
 
 	cu := custom{c}
 	log.Println(cu.LogDir())
+
+	aus := cu.Auths()
+	log.Println(aus)
 }

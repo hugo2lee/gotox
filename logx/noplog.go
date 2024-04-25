@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-25 19:37
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-02 14:14
+ * @LastEditTime: 2024-04-24 15:00
  * @FilePath: \gotox\logx\noplog.go
  * @Description:
  *
@@ -23,17 +23,17 @@ func NewNoOpLogger() Logger {
 }
 
 func (n *NoOpLogger) Debug(msg string, args ...any) {
-	log.Println(msg, args)
+	log.Println("==== Debug ====", msg, args)
 }
 
 func (n *NoOpLogger) Info(msg string, args ...any) {
-	log.Println(msg, args)
+	log.Println("==== Info ====", msg, args)
 }
 
 func (n *NoOpLogger) Warn(msg string, args ...any) {
-	log.Println(msg, args)
+	log.Println("==== Warn ====", msg, args)
 }
 
 func (n *NoOpLogger) Error(msg string, args ...any) {
-	log.Println(msg, args)
+	log.Println("==== Error ====", msg, args)
 }

@@ -2,8 +2,8 @@
  * @Author: hugo
  * @Date: 2024-04-02 10:16
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-02 11:32
- * @FilePath: \gotox\config\configFetch.go
+ * @LastEditTime: 2024-04-24 14:51
+ * @FilePath: \gotox\configx\configRecommend.go
  * @Description:
  *
  * Copyright (c) 2024 by hugo, All Rights Reserved.
@@ -37,4 +37,8 @@ func (c *ConfigCli) MongoUri() string {
 
 func (c *ConfigCli) MongoDb() string {
 	return c.viper.GetString("mongo.db")
+}
+
+func (c *ConfigCli) Auths() map[string]string {
+	return c.viper.GetStringMapString("auths")
 }

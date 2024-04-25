@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-12 15:01
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 16:43
+ * @LastEditTime: 2024-04-24 14:49
  * @FilePath: \gotox\configx\config.go
  * @Description:
  *
@@ -106,4 +106,8 @@ func New(options ...option) *ConfigCli {
 
 func (c *ConfigCli) Mode() string {
 	return c.viper.GetString(RUNMODESTR)
+}
+
+func (c *ConfigCli) Viper() *viper.Viper {
+	return c.viper
 }
