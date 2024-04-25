@@ -21,25 +21,24 @@ type Resource interface {
 }
 
 type Server struct {
-	addr      string
+	configer  *configx.ConfigCli
+	logger    logx.Logger
 	Engine    *gin.Engine
 	httpSrv   *http.Server
-	logger    logx.Logger
 	resources []Resource
 }
 
 func New(conf *configx.ConfigCli, log logx.Logger) *Server {
-	addr := conf.Addr()
 	engine := gin.Default()
 	return &Server{
-		Engine:    engine,
-		addr:      addr,
-		logger:    log,
-		resources: make([]Resource, 0),
+		configer: conf,
+		logger:   log,
+		Engine:   engine,
 		httpSrv: &http.Server{
-			Addr:    addr,
+			Addr:    conf.Addr(),
 			Handler: engine,
 		},
+		resources: make([]Resource, 0),
 	}
 }
 
@@ -69,7 +68,7 @@ func (s *Server) CloseResource(ctx context.Context) {
 
 // 启用http服务
 func (s *Server) Run() error {
-	return s.Engine.Run(s.addr)
+	return s.Engine.Run(s.configer.Addr())
 }
 
 func (s *Server) GracefullyUp() {

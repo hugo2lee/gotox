@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-23 15:41
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 17:12
+ * @LastEditTime: 2024-04-25 19:30
  * @FilePath: \gotox\webx\middleware\middleware_test.go
  * @Description:
  *
@@ -47,11 +47,9 @@ func Test_AccessLog(t *testing.T) {
 func Test_Auth(t *testing.T) {
 	conf := configx.New(configx.WithPath("../../conf"))
 	aus := conf.Auths()
-
-	authList := make(map[auth.AUTH]auth.NAME, len(aus))
-
-	for au, name := range aus {
-		authList[auth.AUTH(name)] = auth.NAME(au)
+	authList := make(auth.AuthPair, len(aus))
+	for name, au := range aus {
+		authList[auth.AUTH(au)] = auth.NAME(name)
 	}
 
 	md := auth.NewMiddlewareBuilder(authList).Build()

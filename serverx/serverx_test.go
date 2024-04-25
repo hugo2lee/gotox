@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:17
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-23 19:20
+ * @LastEditTime: 2024-04-25 19:28
  * @FilePath: \gotox\serverx\serverx_test.go
  * @Description:
  *
@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
 	"github.com/hugo2lee/gotox/mongox"
@@ -75,6 +76,25 @@ func Test_ServerEnableAccessLog(t *testing.T) {
 
 	svr := serverx.New(conf, logger).EnableAccessLog()
 	svr.Engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	log.Printf("resp %v \n", recorder.Body.String())
+}
+
+func Test_ServerEnableAuth(t *testing.T) {
+	conf := configx.New(configx.WithPath("../conf"))
+	logger := logx.New(conf)
+
+	recorder := httptest.NewRecorder()
+
+	svr := serverx.New(conf, logger).EnableAccessLog().EnableAuth()
+	svr.Engine.GET("/", func(c *gin.Context) {
+		log.Printf("client %v \n", c.Keys["auth"])
+		time.Sleep(1 * time.Second)
+		c.String(200, "pong")
+	})
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Add("Authorization", "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4")
+	svr.Engine.ServeHTTP(recorder, req)
 
 	log.Printf("resp %v \n", recorder.Body.String())
 }

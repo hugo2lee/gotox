@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 18:02
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 22:01
+ * @LastEditTime: 2024-04-25 19:30
  * @FilePath: \gotox\serverx\serverxFeature.go
  * @Description:
  *
@@ -14,6 +14,7 @@ import (
 	"context"
 
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
+	"github.com/hugo2lee/gotox/webx/middleware/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +24,17 @@ func (s *Server) EnableAccessLog() *Server {
 	md := accesslog.NewMiddlewareBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		s.logger.Info("ACCESS %v", al)
 	}).AllowReqBody().AllowRespBody().Build()
+	s.Engine.Use(md)
+	return s
+}
+
+func (s *Server) EnableAuth() *Server {
+	aus := s.configer.Auths()
+	authList := make(auth.AuthPair, len(aus))
+	for name, au := range aus {
+		authList[auth.AUTH(au)] = auth.NAME(name)
+	}
+	md := auth.NewMiddlewareBuilder(authList).Build()
 	s.Engine.Use(md)
 	return s
 }
