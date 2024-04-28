@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-12 15:01
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-24 14:49
+ * @LastEditTime: 2024-04-28 16:12
  * @FilePath: \gotox\configx\config.go
  * @Description:
  *
@@ -24,7 +24,7 @@ const (
 	RUNTEST = "test"
 	RUNPROD = "prod"
 
-	DEFAULTPATH       = "../conf"
+	DEFAULTPATH       = "./conf"
 	DEFAULTCONFIGTYPE = "toml"
 	DEFAULTMODE       = RUNDEV
 )
