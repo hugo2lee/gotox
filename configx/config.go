@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-12 15:01
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-28 16:12
+ * @LastEditTime: 2024-04-28 16:50
  * @FilePath: \gotox\configx\config.go
  * @Description:
  *
@@ -35,9 +35,9 @@ type ConfigCli struct {
 	viper *viper.Viper
 }
 
-type option func(*ConfigCli)
+type Option func(*ConfigCli)
 
-func WithMode(mode string) option {
+func WithMode(mode string) Option {
 	return func(cli *ConfigCli) {
 		if mode != RUNDEV && mode != RUNPROD && mode != RUNTEST {
 			log.Fatalf("invalid mode: %s! only support: %s, %s, %s", mode, RUNDEV, RUNPROD, RUNTEST)
@@ -46,7 +46,7 @@ func WithMode(mode string) option {
 	}
 }
 
-func WithPath(path string) option {
+func WithPath(path string) Option {
 	return func(cli *ConfigCli) {
 		if path == "" {
 			log.Fatalf("invalid path: %s", path)
@@ -55,7 +55,7 @@ func WithPath(path string) option {
 	}
 }
 
-func New(options ...option) *ConfigCli {
+func New(options ...Option) *ConfigCli {
 	// 初始化配置过程中可以直接panic
 
 	cli := &ConfigCli{}
