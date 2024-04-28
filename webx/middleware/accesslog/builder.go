@@ -57,7 +57,7 @@ func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
 			// 直接忽略 error，不影响程序运行
 			reqBodyBytes, err := c.GetRawData()
 			if err != nil {
-				logg.Warn("GetRawData reqBodyBytes ", err)
+				logg.Warn("GetRawData reqBodyBytes %v", err)
 			}
 			// Request.Body 是一个 Stream（流）对象，所以是只能读取一次的
 			// 因此读完之后要放回去，不然后续步骤是读不到的
@@ -95,7 +95,7 @@ type AccessLog struct {
 func (al AccessLog) String() string {
 	b, err := json.Marshal(al)
 	if err != nil {
-		logg.Warn("AccessLog Marshal ", err)
+		logg.Warn("AccessLog Marshal Error %v", err)
 	}
 	return string(b)
 }

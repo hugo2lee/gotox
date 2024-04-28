@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 20:31
+ * @LastEditTime: 2024-04-25 22:21
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -37,7 +37,7 @@ func Wrap(fn func(ctx *gin.Context) (Response, error)) gin.HandlerFunc {
 		res, err := fn(ctx)
 		if err != nil {
 			// 打印日志
-			logg.Error("Error", err)
+			logg.Error("Biz Error %v", err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}

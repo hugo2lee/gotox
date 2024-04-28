@@ -35,7 +35,7 @@ func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
 		au := c.GetHeader("Authorization")
 
 		if val, ok := b.authList[AUTH(au)]; !ok {
-			logg.Warn("Unauthorized", au)
+			logg.Warn("Unauthorized %v", au)
 			c.AbortWithStatusJSON(401, gin.H{
 				"code":    401,
 				"message": "Unauthorized",
