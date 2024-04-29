@@ -30,7 +30,7 @@ func Test_Wrap(t *testing.T) {
 
 func Test_WrapBody(t *testing.T) {
 	svr := gin.Default()
-	svr.POST("/ping", webx.WrapBody(func(ctx *gin.Context, req struct {
+	svr.POST("/ping", webx.WrapBind(func(ctx *gin.Context, req struct {
 		Name string `json:"name"`
 	},
 	) (webx.Response, error) {
@@ -48,4 +48,16 @@ func Test_WrapBody(t *testing.T) {
 	svr.ServeHTTP(recorder, req)
 
 	log.Printf("resp %v \n", recorder.Body.String())
+}
+
+func Test_Response(t *testing.T) {
+	interErr := webx.ErrMsg{
+		Code:    500,
+		Message: "svc error",
+	}
+
+	succRes := webx.ResponseSuccess("success")
+	errRes := webx.ResponseErr(interErr)
+	log.Printf("resp %v \n", succRes)
+	log.Printf("resp %v \n", errRes)
 }

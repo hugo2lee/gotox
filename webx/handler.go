@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 22:21
+ * @LastEditTime: 2024-04-29 14:46
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -43,7 +43,7 @@ func Wrap(fn func(ctx *gin.Context) (Response, error)) gin.HandlerFunc {
 	}
 }
 
-func WrapBody[T any](fn func(ctx *gin.Context, req T) (Response, error)) gin.HandlerFunc {
+func WrapBind[T any](fn func(ctx *gin.Context, req T) (Response, error)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var t T
 		if err := ctx.Bind(&t); err != nil {
