@@ -21,6 +21,7 @@ func SetLogger(l logx.Logger) {
 
 type MiddlewareBuilder struct {
 	logFunc       func(ctx context.Context, al AccessLog)
+	allowQuery    bool
 	allowReqBody  bool
 	allowRespBody bool
 }
@@ -30,9 +31,15 @@ func NewMiddlewareBuilder(fn func(ctx context.Context, al AccessLog)) *Middlewar
 	return &MiddlewareBuilder{
 		logFunc: fn,
 		// 默认不打印
+		allowQuery:    false,
 		allowReqBody:  false,
 		allowRespBody: false,
 	}
+}
+
+func (b *MiddlewareBuilder) AllowQuery() *MiddlewareBuilder {
+	b.allowQuery = true
+	return b
 }
 
 func (b *MiddlewareBuilder) AllowReqBody() *MiddlewareBuilder {
@@ -53,6 +60,11 @@ func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
 			Method: c.Request.Method,
 			Path:   c.Request.URL.Path,
 		}
+
+		if b.allowQuery {
+			al.Query = c.Request.URL.RawQuery
+		}
+
 		if b.allowReqBody && c.Request.Body != nil {
 			// 直接忽略 error，不影响程序运行
 			reqBodyBytes, err := c.GetRawData()
@@ -86,6 +98,7 @@ func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
 type AccessLog struct {
 	Method     string `json:"method"`
 	Path       string `json:"path"`
+	Query      string `json:"query"`
 	ReqBody    string `json:"req_body"`
 	Duration   string `json:"duration"`
 	StatusCode int    `json:"status_code"`

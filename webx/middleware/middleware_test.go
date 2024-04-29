@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-23 15:41
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 19:30
+ * @LastEditTime: 2024-04-29 15:01
  * @FilePath: \gotox\webx\middleware\middleware_test.go
  * @Description:
  *
@@ -29,7 +29,7 @@ import (
 func Test_AccessLog(t *testing.T) {
 	md := accesslog.NewMiddlewareBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		log.Printf("ACCESS %v \n", al)
-	}).AllowReqBody().AllowRespBody().Build()
+	}).AllowQuery().AllowReqBody().AllowRespBody().Build()
 
 	recorder := httptest.NewRecorder()
 
@@ -39,7 +39,7 @@ func Test_AccessLog(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		c.String(200, "pong")
 	})
-	svr.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/ping", io.NopCloser(bytes.NewBufferString("hello"))))
+	svr.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/ping?name=hugo&age=18&gender=male", io.NopCloser(bytes.NewBufferString("hello"))))
 
 	log.Printf("resp %v \n", recorder.Body.String())
 }
