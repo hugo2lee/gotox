@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-11 17:12
+ * @LastEditTime: 2024-05-11 22:57
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -66,9 +66,9 @@ func (app *App) EnableDB() *App {
 		log.Fatalf("orm new failed, %+v", err)
 	}
 	app.DB = orm.DB()
-	app.Logger.Info("init InitDependency success")
 
 	app.addResource(orm)
+	app.Logger.Info("enable orm success")
 	return app
 }
 
@@ -81,9 +81,9 @@ func (app *App) InitTables(fns ...func(*gorm.DB) error) *App {
 	return app
 }
 
-func (app *App) RegisterServies(fns ...webx.Handler) *App {
+func (app *App) ServiesRegister(fns ...func(*App) webx.Handler) *App {
 	for _, fn := range fns {
-		fn.RegisterRouter(app.Engine)
+		fn(app).RegisterRouter(app.Engine)
 	}
 	app.Logger.Info("bind router success")
 	return app
