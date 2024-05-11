@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-10 15:06
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-10 19:54
+ * @LastEditTime: 2024-05-11 13:50
  * @FilePath: \gotox\taskx\taskx_test.go
  * @Description:
  *
@@ -20,13 +20,14 @@ import (
 	"github.com/hugo2lee/gotox/taskx"
 )
 
-func TestOneTask(t *testing.T) {
+func TestTasker(t *testing.T) {
 	t.Log("hello")
 
 	timeOut, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	taskx.New("tick ping", func(ctx context.Context) {
+	tasker := taskx.NewTasker()
+	tasker.AddTask(taskx.NewTaskCli("ping", func(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
@@ -37,7 +38,8 @@ func TestOneTask(t *testing.T) {
 				time.Sleep(1 * time.Second)
 			}
 		}
-	}).Run(timeOut)
+	}))
+	tasker.Run(timeOut)
 
 	time.Sleep(5 * time.Second)
 
