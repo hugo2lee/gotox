@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:17
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-25 19:28
+ * @LastEditTime: 2024-05-11 16:21
  * @FilePath: \gotox\serverx\serverx_test.go
  * @Description:
  *
@@ -12,60 +12,45 @@ package serverx_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
-	"github.com/hugo2lee/gotox/mongox"
-	"github.com/hugo2lee/gotox/ormx"
-	"github.com/hugo2lee/gotox/redisx"
 	"github.com/hugo2lee/gotox/serverx"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_IocResource(t *testing.T) {
-	conf := configx.New(configx.WithPath("../conf"))
-	log := logx.New(conf)
-
-	db, err := ormx.New(conf, log)
-	assert.NoError(t, err)
-
-	rds, err := redisx.New(conf, log)
-	assert.NoError(t, err)
-
-	mongo, err := mongox.New(conf, log)
-	assert.NoError(t, err)
-
-	svr := serverx.New(conf, log)
-	svr.AddResource(db, rds, mongo)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	svr.CloseResource(ctx)
-}
-
 func Test_ServerUp(t *testing.T) {
 	conf := configx.New(configx.WithPath("../conf"))
 	log := logx.New(conf)
-
-	db, err := ormx.New(conf, log)
-	assert.NoError(t, err)
-
-	rds, err := redisx.New(conf, log)
-	assert.NoError(t, err)
-
-	mongo, err := mongox.New(conf, log)
-	assert.NoError(t, err)
-
 	svr := serverx.New(conf, log)
-	svr.AddResource(db, rds, mongo)
 
-	svr.GracefullyUp()
+	_, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGABRT, syscall.SIGTERM)
+	defer cancel()
+
+	go svr.GracefullyUp(cancel)
+
+	time.Sleep(3 * time.Second)
+	cancel()
+
+	timeOut, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := svr.GracefullyDown(timeOut)
+	assert.NoError(t, err)
+
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("done")
 }
 
 func Test_ServerEnableAccessLog(t *testing.T) {
