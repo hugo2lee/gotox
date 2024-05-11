@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 17:40
+ * @LastEditTime: 2024-05-11 15:04
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -16,14 +16,14 @@ import (
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
-	"github.com/hugo2lee/gotox/serverx"
+	"github.com/hugo2lee/gotox/resourcex"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
-var _ serverx.Resource = (*orm)(nil)
+var _ resourcex.Resource = (*orm)(nil)
 
 type orm struct {
 	gorm   *gorm.DB

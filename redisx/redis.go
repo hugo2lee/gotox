@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-02 15:09
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 17:40
+ * @LastEditTime: 2024-05-11 15:03
  * @FilePath: \gotox\redisx\redis.go
  * @Description:
  *
@@ -17,12 +17,12 @@ import (
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
-	"github.com/hugo2lee/gotox/serverx"
+	"github.com/hugo2lee/gotox/resourcex"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 )
 
-var _ serverx.Resource = (*redisCli)(nil)
+var _ resourcex.Resource = (*redisCli)(nil)
 
 type redisCli struct {
 	rds    *redis.Client

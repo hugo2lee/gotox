@@ -16,14 +16,14 @@ import (
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
-	"github.com/hugo2lee/gotox/serverx"
+	"github.com/hugo2lee/gotox/resourcex"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var _ serverx.Resource = (*mongoCli)(nil)
+var _ resourcex.Resource = (*mongoCli)(nil)
 
 type mongoCli struct {
 	Db     *mongo.Database
