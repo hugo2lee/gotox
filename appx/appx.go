@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-13 20:01
+ * @LastEditTime: 2024-05-13 20:07
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -73,7 +73,7 @@ func (app *App) EnableDB() *App {
 	return app
 }
 
-func (app *App) InitTables(fns ...func(*gorm.DB) error) *App {
+func (app *App) MigratTables(fns ...func(*gorm.DB) error) *App {
 	for _, fn := range fns {
 		if err := fn(app.DB); err != nil {
 			log.Fatalf("init tables failed, %+v", err)
@@ -82,7 +82,7 @@ func (app *App) InitTables(fns ...func(*gorm.DB) error) *App {
 	return app
 }
 
-func (app *App) ServiesRegister(fns ...func(*App) webx.Handler) *App {
+func (app *App) RegisterServies(fns ...func(*App) webx.Handler) *App {
 	for _, fn := range fns {
 		fn(app).RegisterRouter(app.Engine)
 	}
