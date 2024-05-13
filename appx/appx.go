@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-13 19:44
+ * @LastEditTime: 2024-05-13 20:01
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -54,6 +54,7 @@ func WithConfigMode(mode string) configx.Option {
 }
 
 func (app *App) addResource(res resourcex.Resource) {
+	resourcex.SetLogger(app.Logger)
 	if app.Resourcer == nil {
 		app.Resourcer = resourcex.NewResourcer()
 	}
@@ -101,6 +102,7 @@ func (app *App) EnableWebServer() *App {
 }
 
 func (app *App) EnableTasks(taskGenFuncs ...func() taskx.Task) *App {
+	taskx.SetLogger(app.Logger)
 	app.Tasker = taskx.NewTasker()
 	for _, taskGen := range taskGenFuncs {
 		app.Tasker.AddTask(taskGen())
