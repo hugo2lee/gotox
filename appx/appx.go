@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-11 22:57
+ * @LastEditTime: 2024-05-13 19:44
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -100,10 +100,10 @@ func (app *App) EnableWebServer() *App {
 	return app
 }
 
-func (app *App) EnableTasks(tasks ...taskx.Task) *App {
+func (app *App) EnableTasks(taskGenFuncs ...func() taskx.Task) *App {
 	app.Tasker = taskx.NewTasker()
-	for _, task := range tasks {
-		app.Tasker.AddTask(task)
+	for _, taskGen := range taskGenFuncs {
+		app.Tasker.AddTask(taskGen())
 	}
 	app.Logger.Info("enable task success")
 	return app
