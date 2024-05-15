@@ -82,9 +82,9 @@ func (app *App) MigratTables(fns ...func(*gorm.DB) error) *App {
 	return app
 }
 
-func (app *App) RegisterServies(fns ...webx.Handler) *App {
+func (app *App) RegisterServies(fns ...func() webx.Handler) *App {
 	for _, fn := range fns {
-		fn.RegisterRouter(app.Engine)
+		fn().RegisterRouter(app.Engine)
 	}
 	app.Logger.Info("bind router success")
 	return app
