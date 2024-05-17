@@ -34,7 +34,7 @@ type App struct {
 	*gorm.DB
 	*serverx.Serverx
 	*resourcex.ResourcexGroup
-	*taskx.Tasker
+	*taskx.TaskxGroup
 }
 
 func NewApp(opt ...configx.Option) *App {
@@ -103,9 +103,9 @@ func (app *App) EnableWebServer() *App {
 
 func (app *App) EnableTasks(taskGenFuncs ...func() taskx.Task) *App {
 	taskx.SetLogger(app.Logger)
-	app.Tasker = taskx.NewTasker()
+	app.TaskxGroup = taskx.NewTaskxGroup()
 	for _, taskGen := range taskGenFuncs {
-		app.Tasker.AddTask(taskGen())
+		app.TaskxGroup.AddTask(taskGen())
 	}
 	app.Logger.Info("enable task success")
 	return app
@@ -115,8 +115,8 @@ func (app *App) Run() {
 	notifyCtx, notifyStop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGABRT, syscall.SIGTERM)
 	defer notifyStop()
 
-	if app.Tasker != nil {
-		app.Tasker.Run(notifyCtx)
+	if app.TaskxGroup != nil {
+		app.TaskxGroup.Run(notifyCtx)
 	}
 
 	if app.Serverx != nil {

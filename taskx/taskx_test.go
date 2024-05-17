@@ -26,8 +26,8 @@ func TestTasker(t *testing.T) {
 	timeOut, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tasker := taskx.NewTasker()
-	tasker.AddTask(taskx.NewTaskCli("ping", func(ctx context.Context) {
+	tasker := taskx.NewTaskxGroup()
+	tasker.AddTask(taskx.NewTaskx("ping", func(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():

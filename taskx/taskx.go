@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-10 15:06
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-13 19:58
+ * @LastEditTime: 2024-05-17 16:48
  * @FilePath: \gotox\taskx\taskx.go
  * @Description:
  *
@@ -29,43 +29,43 @@ type Task interface {
 	Run(context.Context)
 }
 
-type TaskCli struct {
+type Taskx struct {
 	name string
 	fn   func(ctx context.Context)
 }
 
-func NewTaskCli(name string, fn func(ctx context.Context)) *TaskCli {
-	return &TaskCli{
+func NewTaskx(name string, fn func(ctx context.Context)) *Taskx {
+	return &Taskx{
 		name: name,
 		fn:   fn,
 	}
 }
 
-func (t *TaskCli) Name() string {
+func (t *Taskx) Name() string {
 	return t.name
 }
 
-func (t *TaskCli) Run(ctx context.Context) {
+func (t *Taskx) Run(ctx context.Context) {
 	t.fn(ctx)
 }
 
-type Tasker struct {
+type TaskxGroup struct {
 	tasks map[string]Task
 }
 
-func NewTasker() *Tasker {
-	return &Tasker{
+func NewTaskxGroup() *TaskxGroup {
+	return &TaskxGroup{
 		tasks: make(map[string]Task),
 	}
 }
 
-func (t *Tasker) AddTask(tasks ...Task) {
+func (t *TaskxGroup) AddTask(tasks ...Task) {
 	for _, f := range tasks {
 		t.tasks[f.Name()] = f
 	}
 }
 
-func (t *Tasker) Run(ctx context.Context) {
+func (t *TaskxGroup) Run(ctx context.Context) {
 	for _, f := range t.tasks {
 		go f.Run(ctx)
 		logg.Info("task \"%s\" is running \n", f.Name())
