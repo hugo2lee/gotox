@@ -32,7 +32,7 @@ type App struct {
 	*configx.Configx
 	logx.Logger
 	*gorm.DB
-	*serverx.Server
+	*serverx.Serverx
 	*resourcex.Resourcer
 	*taskx.Tasker
 }
@@ -95,7 +95,7 @@ func (app *App) EnableWebServer() *App {
 		EnableAccessLog().
 		EnableWrapLog().
 		EnableAuth()
-	app.Server = srv
+	app.Serverx = srv
 	app.Logger.Info("init server success")
 
 	return app
@@ -119,8 +119,8 @@ func (app *App) Run() {
 		app.Tasker.Run(notifyCtx)
 	}
 
-	if app.Server != nil {
-		go app.Server.GracefullyUp(notifyStop)
+	if app.Serverx != nil {
+		go app.Serverx.GracefullyUp(notifyStop)
 	}
 
 	// 等待中断信号以优雅地关闭服务器
@@ -129,9 +129,9 @@ func (app *App) Run() {
 	timeOutCtx, timeOutCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer timeOutCancel()
 
-	if app.Server != nil {
+	if app.Serverx != nil {
 		// http带超时关闭
-		if err := app.Server.GracefullyDown(timeOutCtx); err != nil {
+		if err := app.Serverx.GracefullyDown(timeOutCtx); err != nil {
 			app.Logger.Error("http server Shutdown error: %v \n", err)
 		}
 		app.Logger.Info("http server close")

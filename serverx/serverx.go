@@ -1,3 +1,13 @@
+/*
+ * @Author: hugo
+ * @Date: 2024-05-17 14:04
+ * @LastEditors: hugo
+ * @LastEditTime: 2024-05-17 15:15
+ * @FilePath: \gotox\serverx\serverx.go
+ * @Description:
+ *
+ * Copyright (c) 2024 by hugo, All Rights Reserved.
+ */
 package serverx
 
 import (
@@ -9,19 +19,19 @@ import (
 	"github.com/hugo2lee/gotox/logx"
 )
 
-type Server struct {
-	configer *configx.Configx
-	logger   logx.Logger
-	Engine   *gin.Engine
-	httpSrv  *http.Server
+type Serverx struct {
+	config  *configx.Configx
+	logger  logx.Logger
+	httpSrv *http.Server
+	Engine  *gin.Engine
 }
 
-func New(conf *configx.Configx, log logx.Logger) *Server {
+func New(conf *configx.Configx, log logx.Logger) *Serverx {
 	engine := gin.Default()
-	return &Server{
-		configer: conf,
-		logger:   log,
-		Engine:   engine,
+	return &Serverx{
+		config: conf,
+		logger: log,
+		Engine: engine,
 		httpSrv: &http.Server{
 			Addr:    conf.Addr(),
 			Handler: engine,
@@ -30,11 +40,11 @@ func New(conf *configx.Configx, log logx.Logger) *Server {
 }
 
 // 启用http服务
-func (s *Server) Run() error {
-	return s.Engine.Run(s.configer.Addr())
+func (s *Serverx) Run() error {
+	return s.Engine.Run(s.config.Addr())
 }
 
-func (s *Server) GracefullyUp(notifyStop func()) {
+func (s *Serverx) GracefullyUp(notifyStop func()) {
 	if err := s.httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		s.logger.Error("http server error: %s\n", err)
 		notifyStop()
@@ -42,6 +52,6 @@ func (s *Server) GracefullyUp(notifyStop func()) {
 	}
 }
 
-func (s *Server) GracefullyDown(notifyCtx context.Context) error {
+func (s *Serverx) GracefullyDown(notifyCtx context.Context) error {
 	return s.httpSrv.Shutdown(notifyCtx)
 }

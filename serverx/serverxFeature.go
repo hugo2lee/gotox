@@ -20,7 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) EnableAccessLog() *Server {
+func (s *Serverx) EnableAccessLog() *Serverx {
 	accesslog.SetLogger(s.logger)
 	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		s.logger.Info("ACCESS %v", al)
@@ -29,9 +29,9 @@ func (s *Server) EnableAccessLog() *Server {
 	return s
 }
 
-func (s *Server) EnableAuth() *Server {
+func (s *Serverx) EnableAuth() *Serverx {
 	auth.SetLogger(s.logger)
-	aus := s.configer.Auths()
+	aus := s.config.Auths()
 	authList := make(auth.AuthPair, len(aus))
 	for name, au := range aus {
 		authList[auth.AUTH(au)] = auth.NAME(name)
@@ -41,12 +41,12 @@ func (s *Server) EnableAuth() *Server {
 	return s
 }
 
-func (s *Server) EnableWrapLog() *Server {
+func (s *Serverx) EnableWrapLog() *Serverx {
 	webx.SetLogger(s.logger)
 	return s
 }
 
-func (s *Server) LivenessCheck() *Server {
+func (s *Serverx) LivenessCheck() *Serverx {
 	s.Engine.GET("/live", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "live",
@@ -55,7 +55,7 @@ func (s *Server) LivenessCheck() *Server {
 	return s
 }
 
-func (s *Server) ReadinessCheck() *Server {
+func (s *Serverx) ReadinessCheck() *Serverx {
 	s.Engine.GET("/ready", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "ready",
@@ -64,7 +64,7 @@ func (s *Server) ReadinessCheck() *Server {
 	return s
 }
 
-func (s *Server) StarupCheck() *Server {
+func (s *Serverx) StarupCheck() *Serverx {
 	s.Engine.GET("/startup", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "startup",
