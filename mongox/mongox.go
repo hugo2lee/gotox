@@ -23,14 +23,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var _ resourcex.Resource = (*mongoCli)(nil)
+var _ resourcex.Resource = (*mongox)(nil)
 
-type mongoCli struct {
-	Db     *mongo.Database
+type mongox struct {
+	mongo  *mongo.Database
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*mongoCli, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*mongox, error) {
 	uri := conf.MongoUri()
 	if uri == "" {
 		return nil, errors.New("mongo uri is empty")
@@ -54,15 +54,19 @@ func New(conf *configx.Configx, logCli logx.Logger) (*mongoCli, error) {
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		return nil, errors.Wrap(err, "mongo ping error")
 	}
-	return &mongoCli{Db: client.Database(dbName), logger: logCli}, nil
+	return &mongox{mongo: client.Database(dbName), logger: logCli}, nil
 }
 
-func (c *mongoCli) Name() string {
+func (c *mongox) Name() string {
 	return "mongo"
 }
 
-func (c *mongoCli) Close(ctx context.Context, wg *sync.WaitGroup) {
-	if err := c.Db.Client().Disconnect(ctx); err != nil {
+func (c *mongox) DB() *mongo.Database {
+	return c.mongo
+}
+
+func (c *mongox) Close(ctx context.Context, wg *sync.WaitGroup) {
+	if err := c.mongo.Client().Disconnect(ctx); err != nil {
 		c.logger.Error("mongo close error %v", err)
 		return
 	}

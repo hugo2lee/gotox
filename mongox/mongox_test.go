@@ -29,7 +29,7 @@ func TestMongo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
 
-	reslut, err := db.Db.Collection("user").InsertOne(context.TODO(), map[string]string{"name": "hugo"})
+	reslut, err := db.DB().Collection("user").InsertOne(context.TODO(), map[string]string{"name": "hugo"})
 	assert.NoError(t, err)
 	log.Println(reslut)
 }
