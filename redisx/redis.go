@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-02 15:09
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-11 15:03
+ * @LastEditTime: 2024-05-17 14:19
  * @FilePath: \gotox\redisx\redis.go
  * @Description:
  *
@@ -22,14 +22,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var _ resourcex.Resource = (*redisCli)(nil)
+var _ resourcex.Resource = (*redisx)(nil)
 
-type redisCli struct {
+type redisx struct {
 	rds    *redis.Client
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*redisCli, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*redisx, error) {
 	url := conf.RedisUrl()
 
 	opt, err := redis.ParseURL(url)
@@ -47,18 +47,18 @@ func New(conf *configx.Configx, logCli logx.Logger) (*redisCli, error) {
 		return nil, errors.New("redis ping error")
 	}
 
-	return &redisCli{rdb, logCli}, nil
+	return &redisx{rdb, logCli}, nil
 }
 
-func (c *redisCli) Name() string {
+func (c *redisx) Name() string {
 	return "redis"
 }
 
-func (c *redisCli) DB() *redis.Client {
+func (c *redisx) DB() *redis.Client {
 	return c.rds
 }
 
-func (c *redisCli) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *redisx) Close(ctx context.Context, wg *sync.WaitGroup) {
 	if err := c.DB().Close(); err != nil {
 		c.logger.Error("redis close error %v", err)
 		return
