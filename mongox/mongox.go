@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:19
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 17:52
+ * @LastEditTime: 2024-05-17 15:02
  * @FilePath: \gotox\mongox\mongox.go
  * @Description:
  *
@@ -23,14 +23,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var _ resourcex.Resource = (*mongox)(nil)
+var _ resourcex.Resource = (*Mongox)(nil)
 
-type mongox struct {
+type Mongox struct {
 	mongo  *mongo.Database
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*mongox, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*Mongox, error) {
 	uri := conf.MongoUri()
 	if uri == "" {
 		return nil, errors.New("mongo uri is empty")
@@ -54,18 +54,18 @@ func New(conf *configx.Configx, logCli logx.Logger) (*mongox, error) {
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		return nil, errors.Wrap(err, "mongo ping error")
 	}
-	return &mongox{mongo: client.Database(dbName), logger: logCli}, nil
+	return &Mongox{mongo: client.Database(dbName), logger: logCli}, nil
 }
 
-func (c *mongox) Name() string {
+func (c *Mongox) Name() string {
 	return "mongo"
 }
 
-func (c *mongox) DB() *mongo.Database {
+func (c *Mongox) DB() *mongo.Database {
 	return c.mongo
 }
 
-func (c *mongox) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Mongox) Close(ctx context.Context, wg *sync.WaitGroup) {
 	if err := c.mongo.Client().Disconnect(ctx); err != nil {
 		c.logger.Error("mongo close error %v", err)
 		return
