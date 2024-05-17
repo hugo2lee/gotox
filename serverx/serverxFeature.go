@@ -22,7 +22,7 @@ import (
 
 func (s *Server) EnableAccessLog() *Server {
 	accesslog.SetLogger(s.logger)
-	md := accesslog.NewMiddlewareBuilder(func(ctx context.Context, al accesslog.AccessLog) {
+	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		s.logger.Info("ACCESS %v", al)
 	}).AllowQuery().AllowReqBody().AllowRespBody().Build()
 	s.Engine.Use(md)

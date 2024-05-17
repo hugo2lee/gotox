@@ -27,7 +27,7 @@ import (
 )
 
 func Test_AccessLog(t *testing.T) {
-	md := accesslog.NewMiddlewareBuilder(func(ctx context.Context, al accesslog.AccessLog) {
+	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		log.Printf("ACCESS %v \n", al)
 	}).AllowQuery().AllowReqBody().AllowRespBody().Build()
 

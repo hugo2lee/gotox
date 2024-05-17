@@ -25,7 +25,7 @@ import (
 
 func Test_AccessLog(t *testing.T) {
 	// accesslog.SetLogger(logx.NewNoOpLogger())
-	md := accesslog.NewMiddlewareBuilder(func(ctx context.Context, al accesslog.AccessLog) {
+	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		log.Printf("ACCESS %v \n", al)
 	}).AllowReqBody().AllowRespBody().Build()
 

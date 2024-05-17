@@ -19,7 +19,7 @@ func SetLogger(l logx.Logger) {
 	logg = l
 }
 
-type MiddlewareBuilder struct {
+type Accesslog struct {
 	logFunc       func(ctx context.Context, al AccessLog)
 	allowQuery    bool
 	allowReqBody  bool
@@ -27,8 +27,8 @@ type MiddlewareBuilder struct {
 }
 
 // fn 的 ctx 其实是 gin.Context
-func NewMiddlewareBuilder(fn func(ctx context.Context, al AccessLog)) *MiddlewareBuilder {
-	return &MiddlewareBuilder{
+func NewBuilder(fn func(ctx context.Context, al AccessLog)) *Accesslog {
+	return &Accesslog{
 		logFunc: fn,
 		// 默认不打印
 		allowQuery:    false,
@@ -37,22 +37,22 @@ func NewMiddlewareBuilder(fn func(ctx context.Context, al AccessLog)) *Middlewar
 	}
 }
 
-func (b *MiddlewareBuilder) AllowQuery() *MiddlewareBuilder {
+func (b *Accesslog) AllowQuery() *Accesslog {
 	b.allowQuery = true
 	return b
 }
 
-func (b *MiddlewareBuilder) AllowReqBody() *MiddlewareBuilder {
+func (b *Accesslog) AllowReqBody() *Accesslog {
 	b.allowReqBody = true
 	return b
 }
 
-func (b *MiddlewareBuilder) AllowRespBody() *MiddlewareBuilder {
+func (b *Accesslog) AllowRespBody() *Accesslog {
 	b.allowRespBody = true
 	return b
 }
 
-func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
+func (b *Accesslog) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
