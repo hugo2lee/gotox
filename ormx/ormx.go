@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-11 15:04
+ * @LastEditTime: 2024-05-17 14:18
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -23,14 +23,14 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var _ resourcex.Resource = (*orm)(nil)
+var _ resourcex.Resource = (*ormx)(nil)
 
-type orm struct {
+type ormx struct {
 	gorm   *gorm.DB
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*orm, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*ormx, error) {
 	dsn := conf.MysqlDsn()
 	if dsn == "" {
 		return nil, errors.New("mysql dsn is empty")
@@ -60,18 +60,18 @@ func New(conf *configx.Configx, logCli logx.Logger) (*orm, error) {
 		db = db.Debug()
 	}
 
-	return &orm{db, logCli}, nil
+	return &ormx{db, logCli}, nil
 }
 
-func (c *orm) DB() *gorm.DB {
+func (c *ormx) DB() *gorm.DB {
 	return c.gorm
 }
 
-func (c *orm) Name() string {
+func (c *ormx) Name() string {
 	return "orm"
 }
 
-func (c *orm) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
 	db, err := c.gorm.DB()
 	if err != nil {
 		c.logger.Error("gorm DB get %v", err)
