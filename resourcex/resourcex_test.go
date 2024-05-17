@@ -26,8 +26,8 @@ import (
 func TestResourcer(t *testing.T) {
 	t.Log("hello")
 
-	re := resourcex.NewResourcer()
-	re.AddResource(resourcex.NewResourceCli("redis", func(ctx context.Context) {
+	re := resourcex.NewResourcexGroup()
+	re.AddResource(resourcex.NewResourcex("redis", func(ctx context.Context) {
 		log.Println("outter call close")
 		for {
 			select {
@@ -58,7 +58,7 @@ func TestRedisResource(t *testing.T) {
 	rds, err := redisx.New(configx.New(configx.WithPath("../conf")), logx.New(configx.New(configx.WithPath("../conf"))))
 	assert.NoError(t, err)
 
-	re := resourcex.NewResourcer()
+	re := resourcex.NewResourcexGroup()
 	re.AddResource(rds)
 
 	timeOut, cancel := context.WithTimeout(context.Background(), 3*time.Second)

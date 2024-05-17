@@ -33,7 +33,7 @@ type App struct {
 	logx.Logger
 	*gorm.DB
 	*serverx.Serverx
-	*resourcex.Resourcer
+	*resourcex.ResourcexGroup
 	*taskx.Tasker
 }
 
@@ -55,10 +55,10 @@ func WithConfigMode(mode string) configx.Option {
 
 func (app *App) addResource(res resourcex.Resource) {
 	resourcex.SetLogger(app.Logger)
-	if app.Resourcer == nil {
-		app.Resourcer = resourcex.NewResourcer()
+	if app.ResourcexGroup == nil {
+		app.ResourcexGroup = resourcex.NewResourcexGroup()
 	}
-	app.Resourcer.AddResource(res)
+	app.ResourcexGroup.AddResource(res)
 }
 
 func (app *App) EnableDB() *App {
@@ -138,8 +138,8 @@ func (app *App) Run() {
 	}
 
 	{
-		if app.Resourcer != nil {
-			app.Resourcer.CloseAll(timeOutCtx)
+		if app.ResourcexGroup != nil {
+			app.ResourcexGroup.CloseAll(timeOutCtx)
 		}
 	}
 

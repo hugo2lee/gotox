@@ -1,3 +1,13 @@
+/*
+ * @Author: hugo
+ * @Date: 2024-05-11 17:17
+ * @LastEditors: hugo
+ * @LastEditTime: 2024-05-17 15:19
+ * @FilePath: \gotox\resourcex\resourcex.go
+ * @Description:
+ *
+ * Copyright (c) 2024 by hugo, All Rights Reserved.
+ */
 package resourcex
 
 import (
@@ -20,45 +30,45 @@ type Resource interface {
 	Close(context.Context, *sync.WaitGroup)
 }
 
-type ResourceCli struct {
+type Resourcex struct {
 	name    string
 	closeFn func(ctx context.Context)
 }
 
-func NewResourceCli(name string, fn func(ctx context.Context)) *ResourceCli {
-	return &ResourceCli{
+func NewResourcex(name string, fn func(ctx context.Context)) *Resourcex {
+	return &Resourcex{
 		name:    name,
 		closeFn: fn,
 	}
 }
 
-func (r *ResourceCli) Name() string {
+func (r *Resourcex) Name() string {
 	return r.name
 }
 
-func (r *ResourceCli) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (r *Resourcex) Close(ctx context.Context, wg *sync.WaitGroup) {
 	r.closeFn(ctx)
 	wg.Done()
 	logg.Info("resource \"%s\" closed", r.name)
 }
 
-type Resourcer struct {
+type ResourcexGroup struct {
 	resources map[string]Resource
 }
 
-func NewResourcer() *Resourcer {
-	return &Resourcer{
+func NewResourcexGroup() *ResourcexGroup {
+	return &ResourcexGroup{
 		resources: make(map[string]Resource),
 	}
 }
 
-func (r *Resourcer) AddResource(res ...Resource) {
+func (r *ResourcexGroup) AddResource(res ...Resource) {
 	for _, f := range res {
 		r.resources[f.Name()] = f
 	}
 }
 
-func (r *Resourcer) CloseAll(ctx context.Context) {
+func (r *ResourcexGroup) CloseAll(ctx context.Context) {
 	wg := new(sync.WaitGroup)
 	wg.Add(len(r.resources))
 	for _, f := range r.resources {
