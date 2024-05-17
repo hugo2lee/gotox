@@ -24,7 +24,7 @@ func Test_Auth(t *testing.T) {
 	authList := map[auth.AUTH]auth.NAME{
 		auth.AUTH("MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4"): auth.NAME("LS-cloud-config"),
 	}
-	md := auth.NewMiddlewareBuilder(authList).Build()
+	md := auth.NewBuilder(authList).Build()
 
 	ctx := &gin.Context{
 		Request: &http.Request{

@@ -36,7 +36,7 @@ func (s *Server) EnableAuth() *Server {
 	for name, au := range aus {
 		authList[auth.AUTH(au)] = auth.NAME(name)
 	}
-	md := auth.NewMiddlewareBuilder(authList).Build()
+	md := auth.NewBuilder(authList).Build()
 	s.Engine.Use(md)
 	return s
 }

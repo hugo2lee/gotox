@@ -1,3 +1,13 @@
+/*
+ * @Author: hugo
+ * @Date: 2024-04-28 16:51
+ * @LastEditors: hugo
+ * @LastEditTime: 2024-05-17 14:59
+ * @FilePath: \gotox\webx\middleware\auth\auth.go
+ * @Description:
+ *
+ * Copyright (c) 2024 by hugo, All Rights Reserved.
+ */
 package auth
 
 import (
@@ -20,17 +30,17 @@ type (
 
 type AuthPair map[AUTH]NAME
 
-type MiddlewareBuilder struct {
+type Auth struct {
 	authList AuthPair
 }
 
-func NewMiddlewareBuilder(list AuthPair) *MiddlewareBuilder {
-	return &MiddlewareBuilder{
+func NewBuilder(list AuthPair) *Auth {
+	return &Auth{
 		authList: list,
 	}
 }
 
-func (b *MiddlewareBuilder) Build() gin.HandlerFunc {
+func (b *Auth) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		au := c.GetHeader("Authorization")
 

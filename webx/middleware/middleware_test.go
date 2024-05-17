@@ -52,7 +52,7 @@ func Test_Auth(t *testing.T) {
 		authList[auth.AUTH(au)] = auth.NAME(name)
 	}
 
-	md := auth.NewMiddlewareBuilder(authList).Build()
+	md := auth.NewBuilder(authList).Build()
 
 	svr := gin.Default()
 	svr.Use(md)
