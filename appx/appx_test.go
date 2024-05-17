@@ -18,5 +18,5 @@ import (
 )
 
 func TestNewApp(t *testing.T) {
-	appx.NewApp().Run()
+	appx.New().Run()
 }

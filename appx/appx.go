@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-13 20:07
+ * @LastEditTime: 2024-05-17 16:55
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -28,18 +28,18 @@ import (
 	"gorm.io/gorm"
 )
 
-type App struct {
-	*configx.Configx
-	logx.Logger
-	*gorm.DB
-	*serverx.Serverx
-	*resourcex.ResourcexGroup
-	*taskx.TaskxGroup
+type Appx struct {
+	Configx        *configx.Configx
+	Logger         logx.Logger
+	DB             *gorm.DB
+	Serverx        *serverx.Serverx
+	ResourcexGroup *resourcex.ResourcexGroup
+	TaskxGroup     *taskx.TaskxGroup
 }
 
-func NewApp(opt ...configx.Option) *App {
+func New(opt ...configx.Option) *Appx {
 	conf := configx.New(opt...)
-	return &App{
+	return &Appx{
 		Configx: conf,
 		Logger:  logx.New(conf),
 	}
@@ -53,7 +53,7 @@ func WithConfigMode(mode string) configx.Option {
 	return configx.WithMode(mode)
 }
 
-func (app *App) addResource(res resourcex.Resource) {
+func (app *Appx) addResource(res resourcex.Resource) {
 	resourcex.SetLogger(app.Logger)
 	if app.ResourcexGroup == nil {
 		app.ResourcexGroup = resourcex.NewResourcexGroup()
@@ -61,7 +61,7 @@ func (app *App) addResource(res resourcex.Resource) {
 	app.ResourcexGroup.AddResource(res)
 }
 
-func (app *App) EnableDB() *App {
+func (app *Appx) EnableDB() *Appx {
 	orm, err := ormx.New(app.Configx, app.Logger)
 	if err != nil {
 		log.Fatalf("orm new failed, %+v", err)
@@ -73,7 +73,7 @@ func (app *App) EnableDB() *App {
 	return app
 }
 
-func (app *App) MigratTables(fns ...func(*gorm.DB) error) *App {
+func (app *Appx) MigratTables(fns ...func(*gorm.DB) error) *Appx {
 	for _, fn := range fns {
 		if err := fn(app.DB); err != nil {
 			log.Fatalf("init tables failed, %+v", err)
@@ -82,15 +82,15 @@ func (app *App) MigratTables(fns ...func(*gorm.DB) error) *App {
 	return app
 }
 
-func (app *App) RegisterServies(fns ...func() webx.Handler) *App {
+func (app *Appx) RegisterServies(fns ...func() webx.Handler) *Appx {
 	for _, fn := range fns {
-		fn().RegisterRouter(app.Engine)
+		fn().RegisterRouter(app.Serverx.Engine)
 	}
 	app.Logger.Info("bind router success")
 	return app
 }
 
-func (app *App) EnableWebServer() *App {
+func (app *Appx) EnableWebServer() *Appx {
 	srv := serverx.New(app.Configx, app.Logger).
 		EnableAccessLog().
 		EnableWrapLog().
@@ -101,7 +101,7 @@ func (app *App) EnableWebServer() *App {
 	return app
 }
 
-func (app *App) EnableTasks(taskGenFuncs ...func() taskx.Task) *App {
+func (app *Appx) EnableTasks(taskGenFuncs ...func() taskx.Task) *Appx {
 	taskx.SetLogger(app.Logger)
 	app.TaskxGroup = taskx.NewTaskxGroup()
 	for _, taskGen := range taskGenFuncs {
@@ -111,7 +111,7 @@ func (app *App) EnableTasks(taskGenFuncs ...func() taskx.Task) *App {
 	return app
 }
 
-func (app *App) Run() {
+func (app *Appx) Run() {
 	notifyCtx, notifyStop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGILL, syscall.SIGTRAP, syscall.SIGABRT, syscall.SIGTERM)
 	defer notifyStop()
 
