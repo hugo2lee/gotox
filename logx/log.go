@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-14 15:44
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-17 14:09
+ * @LastEditTime: 2024-05-17 15:01
  * @FilePath: \gotox\logx\log.go
  * @Description:
  *
@@ -23,15 +23,15 @@ type Logger interface {
 	Error(msg string, args ...any)
 }
 
-var _ Logger = (*logx)(nil)
+var _ Logger = (*Logx)(nil)
 
 var Log Logger
 
-type logx struct {
+type Logx struct {
 	logger *zap.Logger
 }
 
-func New(conf *configx.Configx) *logx {
+func New(conf *configx.Configx) *Logx {
 	zaplog := zap.New(zapLoggerBuilder(conf.LogDir(), conf.Mode()), zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// var err error
@@ -52,7 +52,7 @@ func New(conf *configx.Configx) *logx {
 
 	// zap.ReplaceGlobals(zaplog)
 
-	cli := &logx{
+	cli := &Logx{
 		logger: zaplog,
 	}
 
@@ -63,19 +63,19 @@ func New(conf *configx.Configx) *logx {
 	return cli
 }
 
-func (l *logx) Debug(msg string, args ...any) {
+func (l *Logx) Debug(msg string, args ...any) {
 	l.logger.Sugar().Debugf(msg, args...)
 }
 
-func (l *logx) Info(msg string, args ...any) {
+func (l *Logx) Info(msg string, args ...any) {
 	l.logger.Sugar().Infof(msg, args...)
 }
 
-func (l *logx) Warn(msg string, args ...any) {
+func (l *Logx) Warn(msg string, args ...any) {
 	l.logger.Sugar().Warnf(msg, args...)
 }
 
-func (l *logx) Error(msg string, args ...any) {
+func (l *Logx) Error(msg string, args ...any) {
 	l.logger.Sugar().Errorf(msg, args...)
 }
 
