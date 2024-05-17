@@ -30,7 +30,7 @@ type mongoCli struct {
 	logger logx.Logger
 }
 
-func New(conf *configx.ConfigCli, logCli logx.Logger) (*mongoCli, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*mongoCli, error) {
 	uri := conf.MongoUri()
 	if uri == "" {
 		return nil, errors.New("mongo uri is empty")

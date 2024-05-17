@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-03-12 15:01
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-28 16:50
+ * @LastEditTime: 2024-05-17 14:04
  * @FilePath: \gotox\configx\config.go
  * @Description:
  *
@@ -29,16 +29,16 @@ const (
 	DEFAULTMODE       = RUNDEV
 )
 
-type ConfigCli struct {
+type Configx struct {
 	mode  string
 	path  string
 	viper *viper.Viper
 }
 
-type Option func(*ConfigCli)
+type Option func(*Configx)
 
 func WithMode(mode string) Option {
-	return func(cli *ConfigCli) {
+	return func(cli *Configx) {
 		if mode != RUNDEV && mode != RUNPROD && mode != RUNTEST {
 			log.Fatalf("invalid mode: %s! only support: %s, %s, %s", mode, RUNDEV, RUNPROD, RUNTEST)
 		}
@@ -47,7 +47,7 @@ func WithMode(mode string) Option {
 }
 
 func WithPath(path string) Option {
-	return func(cli *ConfigCli) {
+	return func(cli *Configx) {
 		if path == "" {
 			log.Fatalf("invalid path: %s", path)
 		}
@@ -55,10 +55,10 @@ func WithPath(path string) Option {
 	}
 }
 
-func New(options ...Option) *ConfigCli {
+func New(options ...Option) *Configx {
 	// 初始化配置过程中可以直接panic
 
-	cli := &ConfigCli{}
+	cli := &Configx{}
 	for _, opt := range options {
 		opt(cli)
 	}
@@ -99,15 +99,15 @@ func New(options ...Option) *ConfigCli {
 
 	log.Printf("Using config mode: %s, file: %s \n", v.GetString(RUNMODESTR), v.ConfigFileUsed())
 
-	return &ConfigCli{
+	return &Configx{
 		viper: v,
 	}
 }
 
-func (c *ConfigCli) Mode() string {
+func (c *Configx) Mode() string {
 	return c.viper.GetString(RUNMODESTR)
 }
 
-func (c *ConfigCli) Viper() *viper.Viper {
+func (c *Configx) Viper() *viper.Viper {
 	return c.viper
 }

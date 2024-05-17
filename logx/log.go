@@ -31,7 +31,7 @@ type logCli struct {
 	logger *zap.Logger
 }
 
-func New(conf *configx.ConfigCli) *logCli {
+func New(conf *configx.Configx) *logCli {
 	zaplog := zap.New(zapLoggerBuilder(conf.LogDir(), conf.Mode()), zap.AddCaller(), zap.AddCallerSkip(1))
 
 	// var err error

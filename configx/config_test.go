@@ -18,7 +18,7 @@ import (
 )
 
 type custom struct {
-	*configx.ConfigCli
+	*configx.Configx
 }
 
 func (c custom) LogDir() string {

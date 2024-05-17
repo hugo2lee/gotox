@@ -11,34 +11,34 @@
 package configx
 
 // log config
-func (c *ConfigCli) LogDir() string {
+func (c *Configx) LogDir() string {
 	return c.viper.GetString("log.dir")
 }
 
 // server addr config
-func (c *ConfigCli) Addr() string {
+func (c *Configx) Addr() string {
 	return c.viper.GetString("server.addr")
 }
 
 // redis config
-func (c *ConfigCli) RedisUrl() string {
+func (c *Configx) RedisUrl() string {
 	return c.viper.GetString("redis.url")
 }
 
 // mysql config
-func (c *ConfigCli) MysqlDsn() string {
+func (c *Configx) MysqlDsn() string {
 	return c.viper.GetString("mysql.dsn")
 }
 
 // mongo config
-func (c *ConfigCli) MongoUri() string {
+func (c *Configx) MongoUri() string {
 	return c.viper.GetString("mongo.uri")
 }
 
-func (c *ConfigCli) MongoDb() string {
+func (c *Configx) MongoDb() string {
 	return c.viper.GetString("mongo.db")
 }
 
-func (c *ConfigCli) Auths() map[string]string {
+func (c *Configx) Auths() map[string]string {
 	return c.viper.GetStringMapString("auths")
 }

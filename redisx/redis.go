@@ -29,7 +29,7 @@ type redisCli struct {
 	logger logx.Logger
 }
 
-func New(conf *configx.ConfigCli, logCli logx.Logger) (*redisCli, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*redisCli, error) {
 	url := conf.RedisUrl()
 
 	opt, err := redis.ParseURL(url)

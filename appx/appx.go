@@ -29,7 +29,7 @@ import (
 )
 
 type App struct {
-	*configx.ConfigCli
+	*configx.Configx
 	logx.Logger
 	*gorm.DB
 	*serverx.Server
@@ -40,8 +40,8 @@ type App struct {
 func NewApp(opt ...configx.Option) *App {
 	conf := configx.New(opt...)
 	return &App{
-		ConfigCli: conf,
-		Logger:    logx.New(conf),
+		Configx: conf,
+		Logger:  logx.New(conf),
 	}
 }
 
@@ -62,7 +62,7 @@ func (app *App) addResource(res resourcex.Resource) {
 }
 
 func (app *App) EnableDB() *App {
-	orm, err := ormx.New(app.ConfigCli, app.Logger)
+	orm, err := ormx.New(app.Configx, app.Logger)
 	if err != nil {
 		log.Fatalf("orm new failed, %+v", err)
 	}
@@ -91,7 +91,7 @@ func (app *App) RegisterServies(fns ...func() webx.Handler) *App {
 }
 
 func (app *App) EnableWebServer() *App {
-	srv := serverx.New(app.ConfigCli, app.Logger).
+	srv := serverx.New(app.Configx, app.Logger).
 		EnableAccessLog().
 		EnableWrapLog().
 		EnableAuth()

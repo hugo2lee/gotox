@@ -30,7 +30,7 @@ type orm struct {
 	logger logx.Logger
 }
 
-func New(conf *configx.ConfigCli, logCli logx.Logger) (*orm, error) {
+func New(conf *configx.Configx, logCli logx.Logger) (*orm, error) {
 	dsn := conf.MysqlDsn()
 	if dsn == "" {
 		return nil, errors.New("mysql dsn is empty")

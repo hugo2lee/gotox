@@ -10,13 +10,13 @@ import (
 )
 
 type Server struct {
-	configer *configx.ConfigCli
+	configer *configx.Configx
 	logger   logx.Logger
 	Engine   *gin.Engine
 	httpSrv  *http.Server
 }
 
-func New(conf *configx.ConfigCli, log logx.Logger) *Server {
+func New(conf *configx.Configx, log logx.Logger) *Server {
 	engine := gin.Default()
 	return &Server{
 		configer: conf,
