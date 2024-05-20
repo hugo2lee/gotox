@@ -24,7 +24,7 @@ type Serverx struct {
 	logger     logx.Logger
 	httpSrv    *http.Server
 	Engine     *gin.Engine
-	authMiddle gin.HandlerFunc
+	AuthMiddle gin.HandlerFunc
 }
 
 func New(conf *configx.Configx, log logx.Logger) *Serverx {
