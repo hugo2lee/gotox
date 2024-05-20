@@ -20,10 +20,11 @@ import (
 )
 
 type Serverx struct {
-	config  *configx.Configx
-	logger  logx.Logger
-	httpSrv *http.Server
-	Engine  *gin.Engine
+	config     *configx.Configx
+	logger     logx.Logger
+	httpSrv    *http.Server
+	Engine     *gin.Engine
+	authMiddle gin.HandlerFunc
 }
 
 func New(conf *configx.Configx, log logx.Logger) *Serverx {

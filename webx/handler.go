@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-29 14:46
+ * @LastEditTime: 2024-05-20 21:19
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -29,7 +29,7 @@ func SetLogger(l logx.Logger) {
 type Handler interface {
 	// PublicAPI(server *gin.Engine)
 	// PrivateAPI(server *gin.Engine)
-	RegisterRouter(server *gin.Engine)
+	RegisterRouter(*gin.Engine, ...gin.HandlerFunc)
 }
 
 func Wrap(fn func(ctx *gin.Context) (Response, error)) gin.HandlerFunc {

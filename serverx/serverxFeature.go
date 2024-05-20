@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 18:02
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-29 16:43
+ * @LastEditTime: 2024-05-20 21:24
  * @FilePath: \gotox\serverx\serverxFeature.go
  * @Description:
  *
@@ -37,7 +37,8 @@ func (s *Serverx) EnableAuth() *Serverx {
 		authList[auth.AUTH(au)] = auth.NAME(name)
 	}
 	md := auth.NewBuilder(authList).Build()
-	s.Engine.Use(md)
+	// s.Engine.Use(md)
+	s.authMiddle = md
 	return s
 }
 
