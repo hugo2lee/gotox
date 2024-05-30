@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-20 21:19
+ * @LastEditTime: 2024-05-30 19:52
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -69,6 +69,31 @@ func WrapPage(fn func(ctx *gin.Context, page, pageSize int) (Response, error)) g
 		if err != nil {
 			// 打印日志
 			logg.Error("Biz Error %v", err)
+		}
+		ctx.JSON(http.StatusOK, res)
+	}
+}
+
+func WrapBindQueryAndBody[Q any, B any](fn func(ctx *gin.Context, query Q, body B) (Response, error)) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var q Q
+		var b B
+		if err := ctx.BindQuery(&q); err != nil {
+			// 打印日志
+			logx.Log.Error("query Bind Error %v", err)
+			ctx.JSON(http.StatusBadRequest, Response{Message: err.Error()})
+			return
+		}
+		if err := ctx.BindJSON(&b); err != nil {
+			// 打印日志
+			logx.Log.Error("body Bind Error %v", err)
+			ctx.JSON(http.StatusBadRequest, Response{Message: err.Error()})
+			return
+		}
+		res, err := fn(ctx, q, b)
+		if err != nil {
+			// 打印日志
+			logx.Log.Error("Biz Error %v", err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
