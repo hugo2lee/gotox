@@ -2,13 +2,15 @@
  * @Author: hugo
  * @Date: 2024-04-02 10:16
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-24 14:51
+ * @LastEditTime: 2024-06-03 16:34
  * @FilePath: \gotox\configx\configRecommend.go
  * @Description:
  *
  * Copyright (c) 2024 by hugo, All Rights Reserved.
  */
 package configx
+
+import "time"
 
 // log config
 func (c *Configx) LogDir() string {
@@ -20,9 +22,14 @@ func (c *Configx) Addr() string {
 	return c.viper.GetString("server.addr")
 }
 
-// redis config
+// cache config
 func (c *Configx) RedisUrl() string {
 	return c.viper.GetString("redis.url")
+}
+
+// redis config
+func (c *Configx) CachexDefaultExpiration() time.Duration {
+	return c.viper.GetDuration("cache.defaultExpirationSec")
 }
 
 // mysql config

@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-17 16:55
+ * @LastEditTime: 2024-06-03 16:33
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hugo2lee/gotox/cachex"
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
 	"github.com/hugo2lee/gotox/ormx"
@@ -31,6 +32,7 @@ import (
 type Appx struct {
 	Configx        *configx.Configx
 	Logger         logx.Logger
+	Cachex         cachex.Cachexer
 	DB             *gorm.DB
 	Serverx        *serverx.Serverx
 	ResourcexGroup *resourcex.ResourcexGroup
@@ -70,6 +72,15 @@ func (app *Appx) EnableDB() *Appx {
 
 	app.addResource(orm)
 	app.Logger.Info("enable orm success")
+	return app
+}
+
+func (app *Appx) EnableCache() *Appx {
+	ca := cachex.New(time.Duration(app.Configx.CachexDefaultExpiration()) * time.Second)
+	app.Cachex = ca
+
+	app.addResource(app.Cachex)
+	app.Logger.Info("enable cache success")
 	return app
 }
 

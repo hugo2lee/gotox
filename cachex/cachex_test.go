@@ -12,13 +12,14 @@ package cachex_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/hugo2lee/gotox/cachex"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	cc := cachex.New()
+	cc := cachex.New(2 * time.Minute)
 	cc.Set("age", 18)
 	v, ok := cc.Get("age")
 
