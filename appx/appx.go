@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-03 16:33
+ * @LastEditTime: 2024-06-04 10:31
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -76,7 +76,7 @@ func (app *Appx) EnableDB() *Appx {
 }
 
 func (app *Appx) EnableCache() *Appx {
-	ca := cachex.New(time.Duration(app.Configx.CachexDefaultExpiration()) * time.Second)
+	ca := cachex.New(cachex.WithExpiration(time.Duration(app.Configx.CachexDefaultExpiration())*time.Second), cachex.WithCleanupInterval(time.Duration(app.Configx.CachexCleanupInterval())*time.Second))
 	app.Cachex = ca
 
 	app.addResource(app.Cachex)

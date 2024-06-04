@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-30 20:22
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-03 16:45
+ * @LastEditTime: 2024-06-04 10:28
  * @FilePath: \gotox\cachex\cachex.go
  * @Description:
  *
@@ -28,15 +28,37 @@ type Cachexer interface {
 	Name() string
 	Set(key string, value any)
 	Get(key string) (any, bool)
+	Delete(key string)
 	Close(ctx context.Context, wg *sync.WaitGroup)
 }
 
 type Cachex struct {
+	defaultExpiration time.Duration
+	cleanupInterval   time.Duration
 	*cache.Cache
 }
 
-func New(expiration time.Duration) Cachexer {
-	return &Cachex{cache.New(expiration, 10*time.Minute)}
+type Option func(*Cachex)
+
+func WithExpiration(expiration time.Duration) Option {
+	return func(c *Cachex) {
+		c.defaultExpiration = expiration
+	}
+}
+
+func WithCleanupInterval(cleanupInterval time.Duration) Option {
+	return func(c *Cachex) {
+		c.cleanupInterval = cleanupInterval
+	}
+}
+
+func New(opts ...Option) Cachexer {
+	ca := &Cachex{}
+	for _, opt := range opts {
+		opt(ca)
+	}
+	ca.Cache = cache.New(ca.defaultExpiration, ca.cleanupInterval)
+	return ca
 }
 
 func (c *Cachex) Name() string {

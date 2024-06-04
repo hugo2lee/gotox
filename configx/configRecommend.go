@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-02 10:16
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-03 16:34
+ * @LastEditTime: 2024-06-04 10:30
  * @FilePath: \gotox\configx\configRecommend.go
  * @Description:
  *
@@ -22,14 +22,18 @@ func (c *Configx) Addr() string {
 	return c.viper.GetString("server.addr")
 }
 
-// cache config
+// redis config
 func (c *Configx) RedisUrl() string {
 	return c.viper.GetString("redis.url")
 }
 
-// redis config
+// cache config
 func (c *Configx) CachexDefaultExpiration() time.Duration {
 	return c.viper.GetDuration("cache.defaultExpirationSec")
+}
+
+func (c *Configx) CachexCleanupInterval() time.Duration {
+	return c.viper.GetDuration("cache.cleanupIntervalSec")
 }
 
 // mysql config
