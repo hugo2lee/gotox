@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-30 20:22
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-04 10:28
+ * @LastEditTime: 2024-06-12 15:07
  * @FilePath: \gotox\cachex\cachex.go
  * @Description:
  *
@@ -29,6 +29,7 @@ type Cachexer interface {
 	Set(key string, value any)
 	Get(key string) (any, bool)
 	Delete(key string)
+	Flush()
 	Close(ctx context.Context, wg *sync.WaitGroup)
 }
 
