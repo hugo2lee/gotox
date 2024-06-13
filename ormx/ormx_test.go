@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:24
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-19 16:46
+ * @LastEditTime: 2024-06-13 16:51
  * @FilePath: \gotox\ormx\ormx_test.go
  * @Description:
  *
@@ -24,7 +24,8 @@ func TestMysql(t *testing.T) {
 	conf := configx.New(configx.WithPath("../conf"))
 	logCli := logx.New(conf)
 	dbGorm, err := ormx.New(conf, logCli)
-	db := dbGorm.DB()
+	dbGorm, err = dbGorm.Add("test")
+	db := dbGorm.DB("test")
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
 

@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-17 15:02
+ * @LastEditTime: 2024-06-13 16:49
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -26,12 +26,22 @@ import (
 var _ resourcex.Resource = (*Ormx)(nil)
 
 type Ormx struct {
-	gorm   *gorm.DB
+	conf   *configx.Configx
 	logger logx.Logger
+	gorms  map[string]*gorm.DB
 }
 
 func New(conf *configx.Configx, logCli logx.Logger) (*Ormx, error) {
-	dsn := conf.MysqlDsn()
+	or := &Ormx{
+		conf,
+		logCli,
+		make(map[string]*gorm.DB),
+	}
+	return or.Add("")
+}
+
+func (o *Ormx) Add(projectName string) (*Ormx, error) {
+	dsn := o.conf.MysqlDsn()
 	if dsn == "" {
 		return nil, errors.New("mysql dsn is empty")
 	}
@@ -44,14 +54,15 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Ormx, error) {
 		// 		LogLevel:      glogger.Info,
 		// 	}),
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true, // 使用单数表名
+			SingularTable: true,        // 使用单数表名
+			TablePrefix:   projectName, // 表名前缀
 		},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "mysql connect error")
 	}
 
-	switch conf.Mode() {
+	switch o.conf.Mode() {
 	case configx.RUNDEV:
 		db = db.Debug()
 	case configx.RUNTEST:
@@ -60,11 +71,20 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Ormx, error) {
 		db = db.Debug()
 	}
 
-	return &Ormx{db, logCli}, nil
+	if o.gorms == nil {
+		o.gorms = make(map[string]*gorm.DB)
+	}
+
+	o.gorms[projectName] = db
+
+	return o, nil
 }
 
-func (c *Ormx) DB() *gorm.DB {
-	return c.gorm
+func (c *Ormx) DB(projectName ...string) *gorm.DB {
+	if len(projectName) == 0 {
+		return c.gorms[""]
+	}
+	return c.gorms[projectName[0]]
 }
 
 func (c *Ormx) Name() string {
@@ -72,15 +92,21 @@ func (c *Ormx) Name() string {
 }
 
 func (c *Ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
-	db, err := c.gorm.DB()
-	if err != nil {
-		c.logger.Error("gorm DB get %v", err)
-		return
+	for name, gor := range c.gorms {
+		if name == "" {
+			name = "default"
+		}
+		db, err := gor.DB()
+		if err != nil {
+			c.logger.Error("gorm %s DB get %v", name, err)
+			return
+		}
+		if err := db.Close(); err != nil {
+			c.logger.Error("gorm %s close %v", name, err)
+			return
+		}
 	}
-	if err := db.Close(); err != nil {
-		c.logger.Error("gorm close %v", err)
-		return
-	}
+
 	wg.Done()
 	c.logger.Info("%s close", c.Name())
 }
