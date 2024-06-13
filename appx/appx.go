@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-04 10:31
+ * @LastEditTime: 2024-06-13 17:55
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -26,14 +26,13 @@ import (
 	"github.com/hugo2lee/gotox/serverx"
 	"github.com/hugo2lee/gotox/taskx"
 	"github.com/hugo2lee/gotox/webx"
-	"gorm.io/gorm"
 )
 
 type Appx struct {
 	Configx        *configx.Configx
 	Logger         logx.Logger
 	Cachex         cachex.Cachexer
-	DB             *gorm.DB
+	DBs            *ormx.Ormx
 	Serverx        *serverx.Serverx
 	ResourcexGroup *resourcex.ResourcexGroup
 	TaskxGroup     *taskx.TaskxGroup
@@ -63,14 +62,20 @@ func (app *Appx) addResource(res resourcex.Resource) {
 	app.ResourcexGroup.AddResource(res)
 }
 
-func (app *Appx) EnableDB() *Appx {
-	orm, err := ormx.New(app.Configx, app.Logger)
-	if err != nil {
-		log.Fatalf("orm new failed, %+v", err)
+func (app *Appx) EnableDB(projectName string) *Appx {
+	if app.DBs == nil || projectName == ormx.DefaultProjectName {
+		orm, err := ormx.New(app.Configx, app.Logger)
+		if err != nil {
+			log.Fatalf("orm new failed, %+v", err)
+		}
+		app.DBs = orm
 	}
-	app.DB = orm.DB()
 
-	app.addResource(orm)
+	if _, err := app.DBs.Add(projectName); err != nil {
+		log.Fatalf("add db %s failed, %+v", projectName, err)
+	}
+
+	app.addResource(app.DBs)
 	app.Logger.Info("enable orm success")
 	return app
 }
@@ -84,9 +89,9 @@ func (app *Appx) EnableCache() *Appx {
 	return app
 }
 
-func (app *Appx) MigratTables(fns ...func(*gorm.DB) error) *Appx {
+func (app *Appx) MigratTables(fns ...func() error) *Appx {
 	for _, fn := range fns {
-		if err := fn(app.DB); err != nil {
+		if err := fn(); err != nil {
 			log.Fatalf("init tables failed, %+v", err)
 		}
 	}
