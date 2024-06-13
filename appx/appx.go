@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-05-11 15:05
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-13 17:55
+ * @LastEditTime: 2024-06-13 22:00
  * @FilePath: \gotox\appx\appx.go
  * @Description:
  *
@@ -62,21 +62,23 @@ func (app *Appx) addResource(res resourcex.Resource) {
 	app.ResourcexGroup.AddResource(res)
 }
 
-func (app *Appx) EnableDB(projectName string) *Appx {
-	if app.DBs == nil || projectName == ormx.DefaultProjectName {
-		orm, err := ormx.New(app.Configx, app.Logger)
+func (app *Appx) EnableDB(projectName ...string) *Appx {
+	if app.DBs == nil {
+		orm, err := ormx.New(app.Configx, app.Logger, projectName...)
 		if err != nil {
 			log.Fatalf("orm new failed, %+v", err)
 		}
 		app.DBs = orm
+		app.addResource(app.DBs)
+		app.Logger.Info("enable orm success")
+	} else {
+		for _, name := range projectName {
+			if _, err := app.DBs.AddDB(name); err != nil {
+				log.Fatalf("add db %s failed, %+v", projectName, err)
+			}
+		}
 	}
 
-	if _, err := app.DBs.AddDB(projectName); err != nil {
-		log.Fatalf("add db %s failed, %+v", projectName, err)
-	}
-
-	app.addResource(app.DBs)
-	app.Logger.Info("enable orm success")
 	return app
 }
 
