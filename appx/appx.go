@@ -71,7 +71,7 @@ func (app *Appx) EnableDB(projectName string) *Appx {
 		app.DBs = orm
 	}
 
-	if _, err := app.DBs.Add(projectName); err != nil {
+	if _, err := app.DBs.AddDB(projectName); err != nil {
 		log.Fatalf("add db %s failed, %+v", projectName, err)
 	}
 

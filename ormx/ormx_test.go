@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:24
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-13 16:51
+ * @LastEditTime: 2024-06-13 20:42
  * @FilePath: \gotox\ormx\ormx_test.go
  * @Description:
  *
@@ -22,12 +22,10 @@ import (
 func TestMysql(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-	logCli := logx.New(conf)
-	dbGorm, err := ormx.New(conf, logCli)
-	dbGorm, err = dbGorm.Add("test")
-	db := dbGorm.DB("test")
+	dbGorm, err := ormx.New(conf, logx.Log, "test")
 	assert.NoError(t, err)
-	assert.NotNil(t, db)
+
+	db := dbGorm.GetDB("test")
 
 	type User struct {
 		Name string

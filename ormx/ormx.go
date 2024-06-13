@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-13 16:54
+ * @LastEditTime: 2024-06-13 20:39
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -12,6 +12,7 @@ package ormx
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/hugo2lee/gotox/configx"
@@ -33,16 +34,24 @@ type Ormx struct {
 	gorms  map[string]*gorm.DB
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*Ormx, error) {
+func New(conf *configx.Configx, logCli logx.Logger, projectName ...string) (*Ormx, error) {
 	or := &Ormx{
 		conf,
 		logCli,
 		make(map[string]*gorm.DB),
 	}
-	return or.Add(DefaultProjectName)
+	if len(projectName) == 0 {
+		return or.AddDB(DefaultProjectName)
+	}
+	for _, name := range projectName {
+		if _, err := or.AddDB(name); err != nil {
+			return nil, err
+		}
+	}
+	return or, nil
 }
 
-func (o *Ormx) Add(projectName string) (*Ormx, error) {
+func (o *Ormx) AddDB(projectName string) (*Ormx, error) {
 	dsn := o.conf.MysqlDsn()
 	if dsn == "" {
 		return nil, errors.New("mysql dsn is empty")
@@ -56,8 +65,8 @@ func (o *Ormx) Add(projectName string) (*Ormx, error) {
 		// 		LogLevel:      glogger.Info,
 		// 	}),
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,        // 使用单数表名
-			TablePrefix:   projectName, // 表名前缀
+			SingularTable: true,                            // 使用单数表名
+			TablePrefix:   fmt.Sprintf("%s_", projectName), // 表名前缀
 		},
 	})
 	if err != nil {
@@ -82,7 +91,7 @@ func (o *Ormx) Add(projectName string) (*Ormx, error) {
 	return o, nil
 }
 
-func (c *Ormx) DB(projectName ...string) *gorm.DB {
+func (c *Ormx) GetDB(projectName ...string) *gorm.DB {
 	if len(projectName) == 0 {
 		return c.gorms[DefaultProjectName]
 	}
