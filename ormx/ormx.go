@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-13 16:49
+ * @LastEditTime: 2024-06-13 16:54
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -25,6 +25,8 @@ import (
 
 var _ resourcex.Resource = (*Ormx)(nil)
 
+const DefaultProjectName = ""
+
 type Ormx struct {
 	conf   *configx.Configx
 	logger logx.Logger
@@ -37,7 +39,7 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Ormx, error) {
 		logCli,
 		make(map[string]*gorm.DB),
 	}
-	return or.Add("")
+	return or.Add(DefaultProjectName)
 }
 
 func (o *Ormx) Add(projectName string) (*Ormx, error) {
@@ -82,7 +84,7 @@ func (o *Ormx) Add(projectName string) (*Ormx, error) {
 
 func (c *Ormx) DB(projectName ...string) *gorm.DB {
 	if len(projectName) == 0 {
-		return c.gorms[""]
+		return c.gorms[DefaultProjectName]
 	}
 	return c.gorms[projectName[0]]
 }
@@ -93,7 +95,7 @@ func (c *Ormx) Name() string {
 
 func (c *Ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
 	for name, gor := range c.gorms {
-		if name == "" {
+		if name == DefaultProjectName {
 			name = "default"
 		}
 		db, err := gor.DB()
