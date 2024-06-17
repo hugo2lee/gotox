@@ -1,5 +1,15 @@
 version: '3'
 services:
+  postgres:
+    image: postgres:alpine
+    # container_name: postgres
+    # restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+
   mysql:
     image: mysql:latest
     # restart: always

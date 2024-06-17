@@ -99,9 +99,9 @@ func New(options ...Option) *Configx {
 
 	log.Printf("Using config mode: %s, file: %s \n", v.GetString(RUNMODESTR), v.ConfigFileUsed())
 
-	return &Configx{
-		viper: v,
-	}
+	cli.viper = v
+
+	return cli
 }
 
 func (c *Configx) Mode() string {

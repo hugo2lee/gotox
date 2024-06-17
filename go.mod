@@ -1,6 +1,6 @@
 module github.com/hugo2lee/gotox
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -12,7 +12,14 @@ require (
 	go.mongodb.org/mongo-driver v1.15.0
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/mysql v1.5.6
-	gorm.io/gorm v1.25.9
+	gorm.io/gorm v1.25.10
+)
+
+require (
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/pgx/v5 v5.5.5 // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 )
 
 require (
@@ -73,4 +80,5 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/postgres v1.5.9
 )

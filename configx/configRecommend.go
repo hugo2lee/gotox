@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-02 10:16
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-04 10:30
+ * @LastEditTime: 2024-06-17 17:14
  * @FilePath: \gotox\configx\configRecommend.go
  * @Description:
  *
@@ -39,6 +39,11 @@ func (c *Configx) CachexCleanupInterval() time.Duration {
 // mysql config
 func (c *Configx) MysqlDsn() string {
 	return c.viper.GetString("mysql.dsn")
+}
+
+// pg config
+func (c *Configx) PostgresDsn() string {
+	return c.viper.GetString("postgres.dsn")
 }
 
 // mongo config

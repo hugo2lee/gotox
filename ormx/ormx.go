@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-13 20:39
+ * @LastEditTime: 2024-06-17 20:43
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -13,6 +13,7 @@ package ormx
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/hugo2lee/gotox/configx"
@@ -20,13 +21,22 @@ import (
 	"github.com/hugo2lee/gotox/resourcex"
 	"github.com/pkg/errors"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
 var _ resourcex.Resource = (*Ormx)(nil)
 
-const DefaultProjectName = ""
+const (
+	DefaultProjectName         = DefaultMysqlProjectName
+	MYSQL                      = "mysql"
+	DefaultMysqlProjectName    = ""
+	POSTGRES                   = "postgres"
+	DefaultPostgresProjectName = "public"
+)
+
+type Option func(*Ormx) error
 
 type Ormx struct {
 	conf   *configx.Configx
@@ -34,30 +44,31 @@ type Ormx struct {
 	gorms  map[string]*gorm.DB
 }
 
-func New(conf *configx.Configx, logCli logx.Logger, projectName ...string) (*Ormx, error) {
-	or := &Ormx{
+func New(conf *configx.Configx, logCli logx.Logger, ops ...Option) (*Ormx, error) {
+	orm := &Ormx{
 		conf,
 		logCli,
 		make(map[string]*gorm.DB),
 	}
-	if len(projectName) == 0 {
-		return or.AddDB(DefaultProjectName)
+
+	if ops == nil {
+		if err := WithMysql(DefaultProjectName)(orm); err != nil {
+			return nil, err
+		}
+		return orm, nil
 	}
-	for _, name := range projectName {
-		if _, err := or.AddDB(name); err != nil {
+
+	for _, op := range ops {
+		if err := op(orm); err != nil {
 			return nil, err
 		}
 	}
-	return or, nil
+
+	return orm, nil
 }
 
-func (o *Ormx) AddDB(projectName string) (*Ormx, error) {
-	dsn := o.conf.MysqlDsn()
-	if dsn == "" {
-		return nil, errors.New("mysql dsn is empty")
-	}
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+func (orm *Ormx) dialDB(dialer gorm.Dialector, tablePrefix string) (*gorm.DB, error) {
+	db, err := gorm.Open(dialer, &gorm.Config{
 		// 使用 DEBUG 来打印
 		// Logger: glogger.New(gormLoggerFunc(logCli.Debug),
 		// 	glogger.Config{
@@ -65,30 +76,109 @@ func (o *Ormx) AddDB(projectName string) (*Ormx, error) {
 		// 		LogLevel:      glogger.Info,
 		// 	}),
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,                            // 使用单数表名
-			TablePrefix:   fmt.Sprintf("%s_", projectName), // 表名前缀
+			SingularTable: true,        // 使用单数表名
+			TablePrefix:   tablePrefix, // 表名前缀
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "mysql connect error")
+		return nil, err
+	}
+	bareDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	bareDb.SetMaxIdleConns(10)
+	bareDb.SetMaxOpenConns(100)
+	if err := bareDb.Ping(); err != nil {
+		return nil, err
 	}
 
-	switch o.conf.Mode() {
-	case configx.RUNDEV:
-		db = db.Debug()
-	case configx.RUNTEST:
-		db = db.Debug()
-	default:
-		db = db.Debug()
+	// make sure schema exists
+	if dialer.Name() == POSTGRES {
+		ns := strings.SplitN(tablePrefix, ".", 2)
+		if len(ns) == 2 {
+			var exists bool
+			if err := db.Raw("SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = ?)", ns[0]).Scan(&exists).Error; err != nil {
+				return nil, err
+			}
+			orm.logger.Info("schema %s exists %v", ns[0], exists)
+			if !exists {
+				str := fmt.Sprintf("CREATE SCHEMA %s", ns[0])
+				if err := db.Exec(str).Error; err != nil {
+					return nil, err
+				}
+				orm.logger.Info("schema %s created", ns[0])
+			}
+		}
 	}
 
-	if o.gorms == nil {
-		o.gorms = make(map[string]*gorm.DB)
+	return db, nil
+}
+
+func WithMysql(projectName ...string) Option {
+	return func(o *Ormx) error {
+		for _, project := range projectName {
+			dsn := o.conf.MysqlDsn()
+			if dsn == "" {
+				return errors.New("mysql dsn is empty")
+			}
+			dl := mysql.Open(dsn)
+
+			prefix := ""
+			if project != "" {
+				prefix = fmt.Sprintf("%s_", project)
+			}
+			db, err := o.dialDB(dl, prefix)
+			if err != nil {
+				return errors.Wrapf(err, "dial db %s failed", project)
+			}
+
+			switch o.conf.Mode() {
+			case configx.RUNDEV:
+				db = db.Debug()
+			case configx.RUNTEST:
+				db = db.Debug()
+			default:
+				db = db.Debug()
+			}
+
+			o.gorms[project] = db
+		}
+
+		return nil
 	}
+}
 
-	o.gorms[projectName] = db
+func WithPostgres(projectName ...string) Option {
+	return func(o *Ormx) error {
+		for _, project := range projectName {
+			dsn := o.conf.PostgresDsn()
+			if dsn == "" {
+				return errors.New("postgres dsn is empty")
+			}
+			dl := postgres.Open(dsn)
 
-	return o, nil
+			prefix := ""
+			if project != "" {
+				prefix = fmt.Sprintf("%s.", project)
+			}
+			db, err := o.dialDB(dl, prefix)
+			if err != nil {
+				return errors.Wrapf(err, "dial db.schema %s failed", project)
+			}
+
+			switch o.conf.Mode() {
+			case configx.RUNDEV:
+				db = db.Debug()
+			case configx.RUNTEST:
+				db = db.Debug()
+			default:
+				db = db.Debug()
+			}
+			o.gorms[project] = db
+		}
+		return nil
+	}
 }
 
 func (c *Ormx) GetDB(projectName ...string) *gorm.DB {
@@ -104,7 +194,7 @@ func (c *Ormx) Name() string {
 
 func (c *Ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
 	for name, gor := range c.gorms {
-		if name == DefaultProjectName {
+		if name == DefaultMysqlProjectName {
 			name = "default"
 		}
 		db, err := gor.DB()
