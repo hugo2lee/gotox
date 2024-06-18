@@ -25,6 +25,7 @@ const (
 	TraceIdName      = "X-Request-Id"
 	SpanIdName       = "X-Request-Spanid"
 	ParentSpanIdName = "X-Request-Parentspanid"
+	ginKeyTraceName  = "traceid"
 )
 
 type AccesslogCtl struct {
@@ -86,6 +87,12 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 				al.ParentSpanId = c.Request.Header.Get(SpanIdName)
 				al.SpanId = pkg.GenUuid()
 			}
+			if c.Keys == nil {
+				c.Keys = make(map[string]any)
+			}
+			c.Keys[ginKeyTraceName] = al.TraceId
+			// c.Keys["spanid"] = al.SpanId
+			// c.Keys["parentspanid"] = al.ParentSpanId
 		}
 
 		if b.allowQuery {
