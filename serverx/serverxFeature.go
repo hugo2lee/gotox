@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 18:02
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-20 21:29
+ * @LastEditTime: 2024-06-18 16:18
  * @FilePath: \gotox\serverx\serverxFeature.go
  * @Description:
  *
@@ -24,7 +24,7 @@ func (s *Serverx) EnableAccessLog() *Serverx {
 	accesslog.SetLogger(s.logger)
 	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		s.logger.Info("ACCESS %v", al)
-	}).AllowQuery().AllowReqBody().AllowRespBody().Build()
+	}).AllowTrace().AllowReqBody().AllowRespBody().Build()
 	s.Engine.Use(md)
 	return s
 }
