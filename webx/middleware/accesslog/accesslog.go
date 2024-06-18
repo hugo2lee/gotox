@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hugo2lee/gotox/internal/pkg"
 	"github.com/hugo2lee/gotox/logx"
 )
 
@@ -19,16 +20,24 @@ func SetLogger(l logx.Logger) {
 	logg = l
 }
 
-type Accesslog struct {
+const (
+	Auth             = "Authorization"
+	TraceIdName      = "X-Request-Id"
+	SpanIdName       = "X-Request-Spanid"
+	ParentSpanIdName = "X-Request-Parentspanid"
+)
+
+type AccesslogCtl struct {
 	logFunc       func(ctx context.Context, al AccessLog)
 	allowQuery    bool
 	allowReqBody  bool
 	allowRespBody bool
+	allowTrace    bool
 }
 
 // fn 的 ctx 其实是 gin.Context
-func NewBuilder(fn func(ctx context.Context, al AccessLog)) *Accesslog {
-	return &Accesslog{
+func NewBuilder(fn func(ctx context.Context, al AccessLog)) *AccesslogCtl {
+	return &AccesslogCtl{
 		logFunc: fn,
 		// 默认不打印
 		allowQuery:    false,
@@ -37,28 +46,46 @@ func NewBuilder(fn func(ctx context.Context, al AccessLog)) *Accesslog {
 	}
 }
 
-func (b *Accesslog) AllowQuery() *Accesslog {
+func (b *AccesslogCtl) AllowQuery() *AccesslogCtl {
 	b.allowQuery = true
 	return b
 }
 
-func (b *Accesslog) AllowReqBody() *Accesslog {
+func (b *AccesslogCtl) AllowReqBody() *AccesslogCtl {
 	b.allowReqBody = true
 	return b
 }
 
-func (b *Accesslog) AllowRespBody() *Accesslog {
+func (b *AccesslogCtl) AllowRespBody() *AccesslogCtl {
 	b.allowRespBody = true
 	return b
 }
 
-func (b *Accesslog) Build() gin.HandlerFunc {
+func (b *AccesslogCtl) AllowTrace() *AccesslogCtl {
+	b.allowTrace = true
+	return b
+}
+
+func (b *AccesslogCtl) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
 		al := AccessLog{
 			Method: c.Request.Method,
 			Path:   c.Request.URL.Path,
+		}
+
+		if b.allowTrace {
+			al.Auth = c.Request.Header.Get(Auth)
+			al.TraceId = c.Request.Header.Get(TraceIdName)
+			if al.TraceId == "" {
+				al.TraceId = pkg.GenUuid()
+				al.ParentSpanId = ""
+				al.SpanId = al.TraceId
+			} else {
+				al.ParentSpanId = c.Request.Header.Get(SpanIdName)
+				al.SpanId = pkg.GenUuid()
+			}
 		}
 
 		if b.allowQuery {
@@ -96,6 +123,13 @@ func (b *Accesslog) Build() gin.HandlerFunc {
 
 // AccessLog 你可以打印很多的信息，根据需要自己加
 type AccessLog struct {
+	// 链路追踪
+	TraceId      string `json:"trace_id"`
+	SpanId       string `json:"span_id"`
+	ParentSpanId string `json:"parent_span_id"`
+	Auth         string `json:"authorization"`
+
+	// 业务信息
 	Method     string `json:"method"`
 	Path       string `json:"path"`
 	Query      string `json:"query"`
@@ -121,6 +155,9 @@ type responseWriter struct {
 
 func (r responseWriter) WriteHeader(statusCode int) {
 	r.al.StatusCode = statusCode
+	r.ResponseWriter.Header().Set(TraceIdName, r.al.TraceId)
+	r.ResponseWriter.Header().Set(SpanIdName, r.al.SpanId)
+	r.ResponseWriter.Header().Set(ParentSpanIdName, r.al.ParentSpanId)
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 

@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-23 15:41
  * @LastEditors: hugo
- * @LastEditTime: 2024-04-29 15:01
+ * @LastEditTime: 2024-06-18 15:32
  * @FilePath: \gotox\webx\middleware\middleware_test.go
  * @Description:
  *
@@ -29,9 +29,17 @@ import (
 func Test_AccessLog(t *testing.T) {
 	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		log.Printf("ACCESS %v \n", al)
-	}).AllowQuery().AllowReqBody().AllowRespBody().Build()
+	}).
+		AllowTrace().
+		AllowQuery().AllowReqBody().AllowRespBody().Build()
 
 	recorder := httptest.NewRecorder()
+
+	req := httptest.NewRequest(http.MethodPost, "/ping?name=hugo&age=18&gender=male", io.NopCloser(bytes.NewBufferString("hello")))
+	req.Header.Set("Authorization", "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4")
+	req.Header.Set(accesslog.TraceIdName, "traceid-xxxx123")
+	req.Header.Set(accesslog.SpanIdName, "trace-this-span-xxxx123")
+	req.Header.Set(accesslog.ParentSpanIdName, "trace-parent-span-xxxx123")
 
 	svr := gin.Default()
 	svr.Use(md)
@@ -39,7 +47,8 @@ func Test_AccessLog(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		c.String(200, "pong")
 	})
-	svr.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/ping?name=hugo&age=18&gender=male", io.NopCloser(bytes.NewBufferString("hello"))))
+
+	svr.ServeHTTP(recorder, req)
 
 	log.Printf("resp %v \n", recorder.Body.String())
 }
