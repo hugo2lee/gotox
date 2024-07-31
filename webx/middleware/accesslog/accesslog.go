@@ -25,7 +25,7 @@ const (
 	TraceIdName      = "X-Request-Id"
 	SpanIdName       = "X-Request-Spanid"
 	ParentSpanIdName = "X-Request-Parentspanid"
-	ginKeyTraceName  = "traceid"
+	GinKeyTraceName  = "traceid"
 )
 
 type AccesslogCtl struct {
@@ -90,7 +90,7 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 			if c.Keys == nil {
 				c.Keys = make(map[string]any)
 			}
-			c.Keys[ginKeyTraceName] = al.TraceId
+			c.Keys[GinKeyTraceName] = al.TraceId
 			// c.Keys["spanid"] = al.SpanId
 			// c.Keys["parentspanid"] = al.ParentSpanId
 		}

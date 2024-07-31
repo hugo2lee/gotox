@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-07-31 17:09
+ * @LastEditTime: 2024-07-31 17:50
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/logx"
+	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
 )
 
 // 受制于泛型，这里只能使用包变量，如无任何实例赋予就用这个
@@ -37,7 +38,7 @@ func Wrap(fn func(ctx *gin.Context) (Response, error)) gin.HandlerFunc {
 		res, err := fn(ctx)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v, res %v", err, res)
+			logg.Error("traceid: %s, biz error: %v", traceIDFromContext(ctx), err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -55,7 +56,7 @@ func WrapBind[T any](fn func(ctx *gin.Context, req T) (Response, error)) gin.Han
 		res, err := fn(ctx, t)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v, res %v", err, res)
+			logg.Error("traceid: %s, biz error: %v", traceIDFromContext(ctx), err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -68,7 +69,7 @@ func WrapPage(fn func(ctx *gin.Context, page, pageSize int) (Response, error)) g
 		res, err := fn(ctx, page, pageSize)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v, res %v", err, res)
+			logg.Error("traceid: %s, biz error: %v", traceIDFromContext(ctx), err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -93,8 +94,17 @@ func WrapBindQueryAndBody[Q any, B any](fn func(ctx *gin.Context, query Q, body 
 		res, err := fn(ctx, q, b)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v, res %v", err, res)
+			logg.Error("traceid: %s, biz error: %v", traceIDFromContext(ctx), err)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
+}
+
+func traceIDFromContext(ctx *gin.Context) string {
+	if val, ok := ctx.Keys[accesslog.GinKeyTraceName]; ok {
+		if traceID, ok := val.(string); ok {
+			return traceID
+		}
+	}
+	return "not found"
 }
