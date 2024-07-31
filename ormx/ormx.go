@@ -138,6 +138,8 @@ func WithMysql(projectName ...string) Option {
 				db = db.Debug()
 			case configx.RUNTEST:
 				db = db.Debug()
+			case configx.RUNPROD:
+				// db = db
 			default:
 				db = db.Debug()
 			}
