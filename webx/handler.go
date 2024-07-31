@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 17:54
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-30 20:20
+ * @LastEditTime: 2024-07-31 17:09
  * @FilePath: \gotox\webx\handler.go
  * @Description:
  *
@@ -37,7 +37,7 @@ func Wrap(fn func(ctx *gin.Context) (Response, error)) gin.HandlerFunc {
 		res, err := fn(ctx)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v", err)
+			logg.Error("Biz Error %v, res %v", err, res)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -55,7 +55,7 @@ func WrapBind[T any](fn func(ctx *gin.Context, req T) (Response, error)) gin.Han
 		res, err := fn(ctx, t)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v", err)
+			logg.Error("Biz Error %v, res %v", err, res)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -68,7 +68,7 @@ func WrapPage(fn func(ctx *gin.Context, page, pageSize int) (Response, error)) g
 		res, err := fn(ctx, page, pageSize)
 		if err != nil {
 			// 打印日志
-			logg.Error("Biz Error %v", err)
+			logg.Error("Biz Error %v, res %v", err, res)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
@@ -80,20 +80,20 @@ func WrapBindQueryAndBody[Q any, B any](fn func(ctx *gin.Context, query Q, body 
 		var b B
 		if err := ctx.BindQuery(&q); err != nil {
 			// 打印日志
-			logx.Log.Error("query Bind Error %v", err)
+			logg.Error("query Bind Error %v", err)
 			ctx.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 			return
 		}
 		if err := ctx.BindJSON(&b); err != nil {
 			// 打印日志
-			logx.Log.Error("body Bind Error %v", err)
+			logg.Error("body Bind Error %v", err)
 			ctx.JSON(http.StatusBadRequest, Response{Message: err.Error()})
 			return
 		}
 		res, err := fn(ctx, q, b)
 		if err != nil {
 			// 打印日志
-			logx.Log.Error("Biz Error %v", err)
+			logg.Error("Biz Error %v, res %v", err, res)
 		}
 		ctx.JSON(http.StatusOK, res)
 	}
