@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-28 16:51
  * @LastEditors: hugo
- * @LastEditTime: 2024-05-17 14:59
+ * @LastEditTime: 2024-09-10 16:02
  * @FilePath: \gotox\webx\middleware\auth\auth.go
  * @Description:
  *
@@ -59,6 +59,12 @@ func (b *Auth) Build() gin.HandlerFunc {
 		}
 
 		// 这里会执行到业务代码
+		c.Next()
+	}
+}
+
+func NoAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		c.Next()
 	}
 }
