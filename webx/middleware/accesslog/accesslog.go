@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -25,15 +26,16 @@ const (
 	TraceIdName      = "X-Request-Id"
 	SpanIdName       = "X-Request-Spanid"
 	ParentSpanIdName = "X-Request-Parentspanid"
-	GinKeyTraceName  = "traceid"
+	GinKeyTraceName  = "gotox-traceid"
 )
 
 type AccesslogCtl struct {
 	logFunc       func(ctx context.Context, al AccessLog)
+	allowStamp    bool
+	allowTrace    bool
 	allowQuery    bool
 	allowReqBody  bool
 	allowRespBody bool
-	allowTrace    bool
 }
 
 // fn 的 ctx 其实是 gin.Context
@@ -41,10 +43,22 @@ func NewBuilder(fn func(ctx context.Context, al AccessLog)) *AccesslogCtl {
 	return &AccesslogCtl{
 		logFunc: fn,
 		// 默认不打印
+		allowTrace:    false,
+		allowStamp:    false,
 		allowQuery:    false,
 		allowReqBody:  false,
 		allowRespBody: false,
 	}
+}
+
+func (b *AccesslogCtl) AllowTrace() *AccesslogCtl {
+	b.allowTrace = true
+	return b
+}
+
+func (b *AccesslogCtl) AllowStamp() *AccesslogCtl {
+	b.allowStamp = true
+	return b
 }
 
 func (b *AccesslogCtl) AllowQuery() *AccesslogCtl {
@@ -62,11 +76,6 @@ func (b *AccesslogCtl) AllowRespBody() *AccesslogCtl {
 	return b
 }
 
-func (b *AccesslogCtl) AllowTrace() *AccesslogCtl {
-	b.allowTrace = true
-	return b
-}
-
 func (b *AccesslogCtl) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -74,6 +83,11 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 		al := AccessLog{
 			Method: c.Request.Method,
 			Path:   c.Request.URL.Path,
+		}
+
+		if b.allowStamp {
+			al.TimeStamp = time.Now().UnixMilli()
+			al.Ip = fmt.Sprintf("%v|%v", c.ClientIP(), c.RemoteIP())
 		}
 
 		if b.allowTrace {
@@ -121,6 +135,18 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 		defer func() {
 			duration := time.Since(start)
 			al.Duration = duration.String()
+
+			if b.allowStamp {
+				if c.Keys != nil {
+					if sn, ok := c.Keys["sn"].(string); ok {
+						al.Sn = sn
+					}
+					if guid, ok := c.Keys["guid"].(string); ok {
+						al.Guid = guid
+					}
+				}
+			}
+
 			b.logFunc(c, al)
 		}()
 		// 这里会执行到业务代码
@@ -135,6 +161,12 @@ type AccessLog struct {
 	SpanId       string `json:"span_id"`
 	ParentSpanId string `json:"parent_span_id"`
 	Auth         string `json:"authorization"`
+
+	// 业务特征
+	TimeStamp int64  `json:"time_stamp"`
+	Ip        string `json:"ip"`
+	Sn        string `json:"sn"`
+	Guid      string `json:"guid"`
 
 	// 业务信息
 	Method     string `json:"method"`

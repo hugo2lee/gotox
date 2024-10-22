@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-23 15:41
  * @LastEditors: hugo
- * @LastEditTime: 2024-06-18 15:32
+ * @LastEditTime: 2024-10-22 16:01
  * @FilePath: \gotox\webx\middleware\middleware_test.go
  * @Description:
  *
@@ -13,6 +13,7 @@ package middleware_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -31,6 +32,7 @@ func Test_AccessLog(t *testing.T) {
 		log.Printf("ACCESS %v \n", al)
 	}).
 		AllowTrace().
+		AllowStamp().
 		AllowQuery().AllowReqBody().AllowRespBody().Build()
 
 	recorder := httptest.NewRecorder()
@@ -44,6 +46,11 @@ func Test_AccessLog(t *testing.T) {
 	svr := gin.Default()
 	svr.Use(md)
 	svr.POST("/ping", func(c *gin.Context) {
+		if c.Keys == nil {
+			c.Keys = make(map[string]any)
+		}
+		c.Keys["sn"] = "client-xx-sn"
+		c.Keys["guid"] = "client-xx-guid"
 		time.Sleep(1 * time.Second)
 		c.String(200, "pong")
 	})
@@ -66,7 +73,7 @@ func Test_Auth(t *testing.T) {
 	svr := gin.Default()
 	svr.Use(md)
 	svr.POST("/ping", func(c *gin.Context) {
-		log.Printf("ACCESS client %v \n", c.Keys["auth"])
+		fmt.Printf("ACCESS client %v \n", c.Keys["auth"])
 		time.Sleep(1 * time.Second)
 		c.String(200, "pong")
 	})
