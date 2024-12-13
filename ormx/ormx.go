@@ -1,8 +1,8 @@
 /*
  * @Author: hugo
  * @Date: 2024-04-19 16:18
- * @LastEditors: hugo
- * @LastEditTime: 2024-06-17 20:43
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2024-12-13 14:05
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -35,6 +35,14 @@ const (
 	POSTGRES                   = "postgres"
 	DefaultPostgresProjectName = "public"
 )
+
+type BaseModel struct {
+	ID      uint  `gorm:"primaryKey;autoIncrement"`
+	Created int64 `gorm:"autoCreateTime:milli"`
+	Updated int64 `gorm:"autoUpdateTime:milli"`
+	Deleted gorm.DeletedAt
+	UUID    string `gorm:"size:36;uniqueIndex"`
+}
 
 type Option func(*Ormx) error
 
