@@ -2,7 +2,7 @@
  * @Author: hugo
  * @Date: 2024-04-19 16:18
  * @LastEditors: hugo2lee
- * @LastEditTime: 2024-12-13 14:05
+ * @LastEditTime: 2025-03-17 14:34
  * @FilePath: \gotox\ormx\ormx.go
  * @Description:
  *
@@ -52,6 +52,7 @@ type Ormx struct {
 	gorms  map[string]*gorm.DB
 }
 
+// New new Ormx with mysql default tableNamePrefix empty
 func New(conf *configx.Configx, logCli logx.Logger, ops ...Option) (*Ormx, error) {
 	orm := &Ormx{
 		conf,
@@ -123,22 +124,30 @@ func (orm *Ormx) dialDB(dialer gorm.Dialector, tablePrefix string) (*gorm.DB, er
 	return db, nil
 }
 
-func WithMysql(projectName ...string) Option {
+// WithMysql is a shortcut for WithMysqlTableNamePrefix
+// In very first version, we only support one mysql db with mutilple project tables to be separated
+// start at 2025.03.31 not recommend to use
+func WithMysql(tableNamePrefixList ...string) Option {
+	return WithMysqlMultipleTableNamePrefix(tableNamePrefixList...)
+}
+
+// default dsn is mysql.dsn in *.toml
+func WithMysqlMultipleTableNamePrefix(tableNamePrefixList ...string) Option {
 	return func(o *Ormx) error {
-		for _, project := range projectName {
+		for _, name := range tableNamePrefixList {
 			dsn := o.conf.MysqlDsn()
 			if dsn == "" {
 				return errors.New("mysql dsn is empty")
 			}
 			dl := mysql.Open(dsn)
 
-			prefix := ""
-			if project != "" {
-				prefix = fmt.Sprintf("%s_", project)
+			prefixOut := ""
+			if name != "" {
+				prefixOut = fmt.Sprintf("%s_", name)
 			}
-			db, err := o.dialDB(dl, prefix)
+			db, err := o.dialDB(dl, prefixOut)
 			if err != nil {
-				return errors.Wrapf(err, "dial db %s failed", project)
+				return errors.Wrapf(err, "dial db %s failed", name)
 			}
 
 			switch o.conf.Mode() {
@@ -152,29 +161,70 @@ func WithMysql(projectName ...string) Option {
 				db = db.Debug()
 			}
 
-			o.gorms[project] = db
+			o.gorms[name] = db
 		}
 
 		return nil
 	}
 }
 
-func WithPostgres(projectName ...string) Option {
+// dbNameList is mysql[yourDbName].dsn in *.toml
+func WithMysqlMultipleDb(dbNameList ...string) Option {
 	return func(o *Ormx) error {
-		for _, project := range projectName {
+		for _, name := range dbNameList {
+			dsn := o.conf.MysqlDsnWithName(name)
+			if dsn == "" {
+				return errors.Errorf("mysql %s dsn is empty", name)
+			}
+			dl := mysql.Open(dsn)
+
+			db, err := o.dialDB(dl, "")
+			if err != nil {
+				return errors.Wrapf(err, "dial db %s failed", name)
+			}
+
+			switch o.conf.Mode() {
+			case configx.RUNDEV:
+				db = db.Debug()
+			case configx.RUNTEST:
+				db = db.Debug()
+			case configx.RUNPROD:
+				// db = db
+			default:
+				db = db.Debug()
+			}
+
+			o.gorms[name] = db
+		}
+
+		return nil
+	}
+}
+
+// WithPostgres is a shortcut for WithPostgresSchema
+// In very first version, we only support one postgres db with mutilple project schema to be separated
+// start at 2025.03.31 not recommend to use
+func WithPostgres(schemaNameList ...string) Option {
+	return WithPostgresMultipleSchema(schemaNameList...)
+}
+
+// default dsn is postgres.dsn in *.toml
+func WithPostgresMultipleSchema(schemaNameList ...string) Option {
+	return func(o *Ormx) error {
+		for _, name := range schemaNameList {
 			dsn := o.conf.PostgresDsn()
 			if dsn == "" {
 				return errors.New("postgres dsn is empty")
 			}
 			dl := postgres.Open(dsn)
 
-			prefix := ""
-			if project != "" {
-				prefix = fmt.Sprintf("%s.", project)
+			prefixOut := ""
+			if name != "" {
+				prefixOut = fmt.Sprintf("%s.", name)
 			}
-			db, err := o.dialDB(dl, prefix)
+			db, err := o.dialDB(dl, prefixOut)
 			if err != nil {
-				return errors.Wrapf(err, "dial db.schema %s failed", project)
+				return errors.Wrapf(err, "dial db.schema %s failed", name)
 			}
 
 			switch o.conf.Mode() {
@@ -185,7 +235,7 @@ func WithPostgres(projectName ...string) Option {
 			default:
 				db = db.Debug()
 			}
-			o.gorms[project] = db
+			o.gorms[name] = db
 		}
 		return nil
 	}
