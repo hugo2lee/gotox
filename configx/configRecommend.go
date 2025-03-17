@@ -1,8 +1,8 @@
 /*
  * @Author: hugo
  * @Date: 2024-04-02 10:16
- * @LastEditors: hugo
- * @LastEditTime: 2024-06-17 17:14
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2025-03-17 14:23
  * @FilePath: \gotox\configx\configRecommend.go
  * @Description:
  *
@@ -10,7 +10,10 @@
  */
 package configx
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // log config
 func (c *Configx) LogDir() string {
@@ -41,6 +44,11 @@ func (c *Configx) MysqlDsn() string {
 	return c.viper.GetString("mysql.dsn")
 }
 
+// mysql multiple config
+func (c *Configx) MysqlDsnWithName(name string) string {
+	return  c.viper.GetString(fmt.Sprintf("mysql.%s", name))
+}
+
 // pg config
 func (c *Configx) PostgresDsn() string {
 	return c.viper.GetString("postgres.dsn")
@@ -55,6 +63,20 @@ func (c *Configx) MongoDb() string {
 	return c.viper.GetString("mongo.db")
 }
 
+// kafka config
+func (c *Configx) KafkaBrokers() []string {
+	return c.viper.GetStringSlice("kafka.brokers")
+}
+
+func (c *Configx) KafkaTopic() string {
+	return c.viper.GetString("kafka.topic")
+}
+
+func (c *Configx) KafkaGroup() string {
+	return c.viper.GetString("kafka.group")
+}
+
+// auth config
 func (c *Configx) Auths() map[string]string {
 	return c.viper.GetStringMapString("auths")
 }
