@@ -8,6 +8,7 @@
  *
  * Copyright (c) 2024 by hugo, All Rights Reserved.
  */
+
 package ormx_test
 
 import (
@@ -60,6 +61,37 @@ func TestMysqlDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = db.Model(&User{}).Create(&User{Name: "hugo"}).Error
+	assert.NoError(t, err)
+}
+
+func TestWithMysqlMultipleDb(t *testing.T) {
+	t.Parallel()
+	conf := configx.New(configx.WithPath("../conf"))
+
+	db1 := "test1"
+	db2 := "test2"
+
+	dbGorm, err := ormx.New(conf, logx.Log, ormx.WithMysqlMultipleDb(db1, db2))
+	assert.NoError(t, err)
+
+	type User struct {
+		Name string
+	}
+
+	dbEn1 := dbGorm.GetDB(db1)
+
+	err = dbEn1.AutoMigrate(&User{})
+	assert.NoError(t, err)
+
+	err = dbEn1.Model(&User{}).Create(&User{Name: "hugo-db1"}).Error
+	assert.NoError(t, err)
+
+	dbEn2 := dbGorm.GetDB(db2)
+
+	err = dbEn2.AutoMigrate(&User{})
+	assert.NoError(t, err)
+
+	err = dbEn2.Model(&User{}).Create(&User{Name: "hugo-db2"}).Error
 	assert.NoError(t, err)
 }
 

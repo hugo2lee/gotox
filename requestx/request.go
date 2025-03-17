@@ -1,3 +1,13 @@
+/*
+ * @Author: hugo2lee
+ * @Date: 2024-10-30 18:04
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2025-01-15 15:03
+ * @FilePath: \gotox\requestx\request.go
+ * @Description:
+ *
+ * Copyright (c) 2025 by hugo, All Rights Reserved.
+ */
 package requestx
 
 import (
