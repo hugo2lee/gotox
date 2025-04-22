@@ -1,8 +1,8 @@
 /*
  * @Author: hugo
  * @Date: 2024-05-17 14:04
- * @LastEditors: hugo
- * @LastEditTime: 2024-05-17 15:15
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2025-04-22 21:57
  * @FilePath: \gotox\serverx\serverx.go
  * @Description:
  *
@@ -25,6 +25,7 @@ type Serverx struct {
 	httpSrv    *http.Server
 	Engine     *gin.Engine
 	AuthMiddle gin.HandlerFunc
+	HashMiddle gin.HandlerFunc
 }
 
 func New(conf *configx.Configx, log logx.Logger) *Serverx {
