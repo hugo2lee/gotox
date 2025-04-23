@@ -1,8 +1,8 @@
 /*
  * @Author: hugo
  * @Date: 2024-04-19 18:02
- * @LastEditors: hugo
- * @LastEditTime: 2024-10-22 16:07
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2025-04-22 21:29
  * @FilePath: \gotox\serverx\serverxFeature.go
  * @Description:
  *
@@ -16,6 +16,7 @@ import (
 	"github.com/hugo2lee/gotox/webx"
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
 	"github.com/hugo2lee/gotox/webx/middleware/auth"
+	"github.com/hugo2lee/gotox/webx/middleware/hashresponse"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,6 +45,30 @@ func (s *Serverx) EnableAuth() *Serverx {
 
 func (s *Serverx) EnableWrapLog() *Serverx {
 	webx.SetLogger(s.logger)
+	return s
+}
+
+func (s *Serverx) EnableMd5Response() *Serverx {
+	hashresponse.SetLogger(s.logger)
+	md := hashresponse.NewBuilder().WithMd5().Build()
+	// s.Engine.Use(md)
+	s.HashMiddle = md
+	return s
+}
+
+func (s *Serverx) EnableSha1Response() *Serverx {
+	hashresponse.SetLogger(s.logger)
+	md := hashresponse.NewBuilder().WithSha1().Build()
+	// s.Engine.Use(md)
+	s.HashMiddle = md
+	return s
+}
+
+func (s *Serverx) EnableSha256Response() *Serverx {
+	hashresponse.SetLogger(s.logger)
+	md := hashresponse.NewBuilder().WithSha256().Build()
+	// s.Engine.Use(md)
+	s.HashMiddle = md
 	return s
 }
 

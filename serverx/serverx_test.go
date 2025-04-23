@@ -1,8 +1,8 @@
 /*
  * @Author: hugo
  * @Date: 2024-04-19 17:17
- * @LastEditors: hugo
- * @LastEditTime: 2024-05-11 16:21
+ * @LastEditors: hugo2lee
+ * @LastEditTime: 2025-04-22 22:01
  * @FilePath: \gotox\serverx\serverx_test.go
  * @Description:
  *
@@ -12,7 +12,10 @@ package serverx_test
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"hash"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -72,14 +75,45 @@ func Test_ServerEnableAuth(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	svr := serverx.New(conf, logger).EnableAccessLog().EnableAuth()
+	svr.Engine.Use(svr.AuthMiddle)
 	svr.Engine.GET("/", func(c *gin.Context) {
 		log.Printf("client %v \n", c.Keys["auth"])
 		time.Sleep(1 * time.Second)
 		c.String(200, "pong")
 	})
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Add("Authorization", "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4")
+	req.Header.Add("Authorization", "client-auth")
 	svr.Engine.ServeHTTP(recorder, req)
 
 	log.Printf("resp %v \n", recorder.Body.String())
+}
+
+// calculateHash 计算哈希值
+func calculateHash(t *testing.T, hasher hash.Hash, data string) string {
+	_, err := hasher.Write([]byte(data))
+	assert.NoError(t, err, "Failed to write data to hasher")
+	// 计算哈希值并转换为十六进制字符串
+	// 注意：这里的 Sum(nil) 会返回一个新的切片
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func Test_ServerEnableMd5Response(t *testing.T) {
+	conf := configx.New(configx.WithPath("../conf"))
+	logger := logx.New(conf)
+
+	recorder := httptest.NewRecorder()
+	responseStr := "Hello, World!11122"
+
+	svr := serverx.New(conf, logger).EnableAccessLog().EnableMd5Response()
+	svr.Engine.Use(svr.HashMiddle)
+	svr.Engine.GET("/", func(c *gin.Context) {
+		c.String(200, responseStr)
+	})
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	svr.Engine.ServeHTTP(recorder, req)
+
+	log.Printf("resp %v \n", recorder.Body.String())
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, calculateHash(t, md5.New(), responseStr), recorder.Header().Get("content-MD5"))
 }
