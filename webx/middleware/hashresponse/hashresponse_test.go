@@ -32,7 +32,7 @@ func TestNewBuilder(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	// 设置响应
-	responseBody := "Hello, World!223355"
+	expectBody := "Hello, World!223355"
 
 	// 模拟 Gin 上下文和请求
 	gin.SetMode(gin.TestMode)
@@ -40,21 +40,24 @@ func TestNewBuilder(t *testing.T) {
 	engine.Use(hashMiddle)
 	pathh := "/"
 	engine.GET(pathh, func(c *gin.Context) {
-		c.String(http.StatusOK, responseBody)
+		c.String(http.StatusOK, expectBody)
 	})
 	c.Request = httptest.NewRequest(http.MethodGet, pathh, nil)
 
 	// 处理请求
 	engine.HandleContext(c)
 
+	resp := recorder.Result()
+	respBody := recorder.Body.String()
+	assert.Equal(t, expectBody, respBody)
 	// 验证响应头中的哈希值
-	expectedMd5 := recorder.Header().Get("Content-Md5")
-	expectedSha1 := recorder.Header().Get("Content-Sha1")
-	expectedSha256 := recorder.Header().Get("Content-Sha256")
+	expectedMd5 := resp.Header.Get("Content-Md5")
+	expectedSha1 := resp.Header.Get("Content-Sha1")
+	expectedSha256 := resp.Header.Get("Content-Sha256")
 
-	assert.Equal(t, expectedMd5, calculateHash(t, md5.New(), responseBody), "MD5 hash mismatch")
-	assert.Equal(t, expectedSha1, calculateHash(t, sha1.New(), responseBody), "SHA1 hash mismatch")
-	assert.Equal(t, expectedSha256, calculateHash(t, sha256.New(), responseBody), "SHA256 hash mismatch")
+	assert.Equal(t, expectedMd5, calculateHash(t, md5.New(), respBody), "MD5 hash mismatch")
+	assert.Equal(t, expectedSha1, calculateHash(t, sha1.New(), respBody), "SHA1 hash mismatch")
+	assert.Equal(t, expectedSha256, calculateHash(t, sha256.New(), respBody), "SHA256 hash mismatch")
 }
 
 // calculateHash 计算哈希值
