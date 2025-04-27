@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/logx"
@@ -31,47 +32,51 @@ const (
 	SHA256 HashAlgorithm = "Sha256"
 )
 
-// ResponseHashBuilder 是中间件构建器
-type ResponseHashBuilder struct {
+// HashBuilder 是中间件构建器
+type HashBuilder struct {
 	algorithms map[HashAlgorithm]func() hash.Hash
 }
 
 // NewBuilder 创建一个新的构建器实例
-func NewBuilder() *ResponseHashBuilder {
-	return &ResponseHashBuilder{
+func NewBuilder() *HashBuilder {
+	return &HashBuilder{
 		algorithms: make(map[HashAlgorithm]func() hash.Hash),
 	}
 }
 
-func (b *ResponseHashBuilder) WithMd5() *ResponseHashBuilder {
-	b.algorithms[MD5] = md5.New
-	return b
+func (hashBuilder *HashBuilder) WithMd5() *HashBuilder {
+	hashBuilder.algorithms[MD5] = md5.New
+	return hashBuilder
 }
 
-func (b *ResponseHashBuilder) WithSha1() *ResponseHashBuilder {
-	b.algorithms[SHA1] = sha1.New
-	return b
+func (hashBuilder *HashBuilder) WithSha1() *HashBuilder {
+	hashBuilder.algorithms[SHA1] = sha1.New
+	return hashBuilder
 }
 
-func (b *ResponseHashBuilder) WithSha256() *ResponseHashBuilder {
-	b.algorithms[SHA256] = sha256.New
-	return b
+func (hashBuilder *HashBuilder) WithSha256() *HashBuilder {
+	hashBuilder.algorithms[SHA256] = sha256.New
+	return hashBuilder
 }
 
 // WithAlgorithm 添加需要计算的哈希算法
-func (b *ResponseHashBuilder) WithAlgorithm(algorithm HashAlgorithm, hasherFunc func() hash.Hash) *ResponseHashBuilder {
-	b.algorithms[algorithm] = hasherFunc
-	return b
+func (hashBuilder *HashBuilder) WithAlgorithm(algorithm HashAlgorithm, hasherFunc func() hash.Hash) *HashBuilder {
+	hashBuilder.algorithms[algorithm] = hasherFunc
+	return hashBuilder
 }
 
-func (b *ResponseHashBuilder) SetHash(c *gin.Context, buf *bytes.Buffer) {
+func (hashBuilder *HashBuilder) SetHash(c *gin.Context, hv *bodyTemp) {
+	if c.Writer.Status() != http.StatusOK {
+		return
+	}
+
 	// 获取响应体内容
-	bodyStr := buf.String()
+	bodyStr := hv.body.String()
 	if bodyStr == "" {
 		logg.Error("HashResponse bodyStr is empty")
 		return
 	}
-	for algorithm, hasherFunc := range b.algorithms {
+	for algorithm, hasherFunc := range hashBuilder.algorithms {
 		hasher := hasherFunc()
 		_, err := io.WriteString(hasher, bodyStr)
 		if err != nil {
@@ -84,38 +89,53 @@ func (b *ResponseHashBuilder) SetHash(c *gin.Context, buf *bytes.Buffer) {
 }
 
 // Build 构建 Gin 中间件
-func (b *ResponseHashBuilder) Build() gin.HandlerFunc {
+func (b *HashBuilder) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 保存原始 Writer
+		originalWriter := c.Writer
 		// 捕获响应 body
-		buf := bytes.NewBuffer(nil)
-		c.Writer = &hashResponseBodyWriter{
-			ResponseWriter: c.Writer,
-			hashMiddleBody: buf,
+		hv := &bodyTemp{
+			body: bytes.NewBuffer(nil),
+		}
+		c.Writer = &hashBodyWriter{
+			ResponseWriter: originalWriter,
+			bt:             hv,
 		}
 		c.Next()
 		// 在请求处理结束后计算哈希值
-		b.SetHash(c, buf)
+		b.SetHash(c, hv)
+		originalWriter.WriteHeaderNow()
+		if hv.write {
+			if _, err := originalWriter.Write(hv.body.Bytes()); err != nil {
+				logg.Error("HashResponse Write %v", err)
+			}
+		}
+		if hv.writeString {
+			if _, err := originalWriter.WriteString(hv.body.String()); err != nil {
+				logg.Error("HashResponse WriteString %v", err)
+			}
+		}
 	}
 }
 
-// hashResponseBodyWriter 是一个自定义的 ResponseWriter，用于捕获响应 body
-type hashResponseBodyWriter struct {
+type bodyTemp struct {
+	body        *bytes.Buffer
+	write       bool
+	writeString bool
+}
+
+// hashBodyWriter 是一个自定义的 ResponseWriter，用于捕获响应 body
+type hashBodyWriter struct {
 	gin.ResponseWriter
-	hashMiddleBody *bytes.Buffer
+	bt *bodyTemp
 }
 
-func (w hashResponseBodyWriter) Write(b []byte) (int, error) {
-	_, err := w.hashMiddleBody.Write(b)
-	if err != nil {
-		logg.Error("hashResponseBodyWriter Write %v", err)
-	}
-	return w.ResponseWriter.Write(b)
+func (w hashBodyWriter) Write(b []byte) (int, error) {
+	w.bt.write = true
+	return w.bt.body.Write(b)
 }
 
-func (w hashResponseBodyWriter) WriteString(s string) (int, error) {
-	_, err := w.hashMiddleBody.WriteString(s)
-	if err != nil {
-		logg.Error("hashResponseBodyWriter WriteString %v", err)
-	}
-	return w.ResponseWriter.WriteString(s)
+func (w hashBodyWriter) WriteString(s string) (int, error) {
+	w.bt.writeString = true
+	return w.bt.body.WriteString(s)
 }
