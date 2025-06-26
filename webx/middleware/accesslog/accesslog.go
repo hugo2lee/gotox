@@ -27,6 +27,8 @@ const (
 	SpanIdName       = "X-Request-Spanid"
 	ParentSpanIdName = "X-Request-Parentspanid"
 	GinKeyTraceName  = "gotox-traceid"
+	Plaform          = "plaform" // 平台，web、android、ios、pc等
+	Token            = "token"   // token 字段，通常是 jwt token 或者其他的 token
 )
 
 type AccesslogCtl struct {
@@ -92,6 +94,8 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 
 		if b.allowTrace {
 			al.Auth = c.Request.Header.Get(Auth)
+			al.Plaform = c.Request.Header.Get(Plaform)
+			al.Token = c.Request.Header.Get(Token)
 			al.TraceId = c.Request.Header.Get(TraceIdName)
 			if al.TraceId == "" {
 				al.TraceId = pkg.GenUuid()
@@ -167,6 +171,8 @@ type AccessLog struct {
 	Ip        string `json:"ip"`
 	Sn        string `json:"sn"`
 	Guid      string `json:"guid"`
+	Plaform   string `json:"plaform"` // 平台，web、android、ios、pc等
+	Token     string `json:"token"`
 
 	// 业务信息
 	Method     string `json:"method"`
