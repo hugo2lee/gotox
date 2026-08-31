@@ -27,11 +27,29 @@ func TestLogger(t *testing.T) {
 	configContent := fmt.Sprintf("[log]\ndir = %q\n", filepath.ToSlash(logFile))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "dev.toml"), []byte(configContent), 0o600))
 
-	conf := configx.New(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
-	logger := logx.New(conf)
+	conf, err := configx.Load(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
+	require.NoError(t, err)
+	logger, err := logx.Open(conf)
+	require.NoError(t, err)
 	logger.Debug("debug %v", 1)
 	logger.Info("info %v", 1)
 
-	_, err := os.Stat(logFile)
+	_, err = os.Stat(logFile)
 	require.NoError(t, err)
+}
+
+func TestOpenReturnsLogDirectoryError(t *testing.T) {
+	dir := t.TempDir()
+	blockingPath := filepath.Join(dir, "not-a-directory")
+	require.NoError(t, os.WriteFile(blockingPath, []byte("file"), 0o600))
+
+	logFile := filepath.Join(blockingPath, "test.log")
+	configContent := fmt.Sprintf("[log]\ndir = %q\n", filepath.ToSlash(logFile))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "dev.toml"), []byte(configContent), 0o600))
+
+	conf, err := configx.Load(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
+	require.NoError(t, err)
+
+	_, err = logx.Open(conf)
+	require.Error(t, err)
 }
