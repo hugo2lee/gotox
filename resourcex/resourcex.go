@@ -17,14 +17,6 @@ import (
 	"github.com/hugo2lee/gotox/logx"
 )
 
-var logg logx.Logger = logx.Log
-
-// // 自定义的logger，建议实例化赋予
-func SetLogger(l logx.Logger) {
-	logg = l
-}
-
-// need to close resources
 type Resource interface {
 	Name() string
 	Close(context.Context, *sync.WaitGroup)
@@ -36,30 +28,40 @@ type Resourcex struct {
 }
 
 func NewResourcex(name string, fn func(ctx context.Context)) *Resourcex {
-	return &Resourcex{
-		name:    name,
-		closeFn: fn,
-	}
+	return &Resourcex{name: name, closeFn: fn}
 }
 
-func (r *Resourcex) Name() string {
-	return r.name
-}
+func (r *Resourcex) Name() string { return r.name }
 
 func (r *Resourcex) Close(ctx context.Context, wg *sync.WaitGroup) {
 	r.closeFn(ctx)
 	wg.Done()
-	logg.Info("resource \"%s\" closed", r.name)
+}
+
+type GroupOption func(*ResourcexGroup)
+
+func WithLogger(logger logx.Logger) GroupOption {
+	return func(g *ResourcexGroup) {
+		if logger != nil {
+			g.logger = logger
+		}
+	}
 }
 
 type ResourcexGroup struct {
 	resources map[string]Resource
+	logger    logx.Logger
 }
 
-func NewResourcexGroup() *ResourcexGroup {
-	return &ResourcexGroup{
+func NewResourcexGroup(opts ...GroupOption) *ResourcexGroup {
+	g := &ResourcexGroup{
 		resources: make(map[string]Resource),
+		logger:    logx.NewNoOpLogger(),
 	}
+	for _, opt := range opts {
+		opt(g)
+	}
+	return g
 }
 
 func (r *ResourcexGroup) AddResource(res ...Resource) {
@@ -82,8 +84,8 @@ func (r *ResourcexGroup) CloseAll(ctx context.Context) {
 
 	select {
 	case <-ctx.Done():
-		logg.Info("close resource timeout")
+		r.logger.Info("close resource timeout")
 	case <-wgChan:
-		logg.Info("all resource closed")
+		r.logger.Info("all resource closed")
 	}
 }
