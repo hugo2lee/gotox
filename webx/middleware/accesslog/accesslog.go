@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,16 +22,19 @@ const (
 	GinKeyTraceName  = "gotox-traceid"
 	Plaform          = "plaform"
 	Token            = "token"
+
+	redactedValue = "[REDACTED]"
 )
 
 type AccesslogCtl struct {
-	logFunc       func(ctx context.Context, al AccessLog)
-	logger        logx.Logger
-	allowStamp    bool
-	allowTrace    bool
-	allowQuery    bool
-	allowReqBody  bool
-	allowRespBody bool
+	logFunc                   func(ctx context.Context, al AccessLog)
+	logger                    logx.Logger
+	allowStamp                bool
+	allowTrace                bool
+	allowQuery                bool
+	allowReqBody              bool
+	allowRespBody             bool
+	allowSensitiveCredentials bool
 }
 
 func NewBuilder(fn func(ctx context.Context, al AccessLog)) *AccesslogCtl {
@@ -53,6 +57,26 @@ func (b *AccesslogCtl) AllowQuery() *AccesslogCtl { b.allowQuery = true; return 
 func (b *AccesslogCtl) AllowReqBody() *AccesslogCtl { b.allowReqBody = true; return b }
 func (b *AccesslogCtl) AllowRespBody() *AccesslogCtl { b.allowRespBody = true; return b }
 
+// AllowSensitiveCredentials opts into logging raw Authorization/token values.
+// Avoid this in persistent logs. By default, credential values are redacted.
+func (b *AccesslogCtl) AllowSensitiveCredentials() *AccesslogCtl {
+	b.allowSensitiveCredentials = true
+	return b
+}
+
+func redactCredential(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	parts := strings.SplitN(value, " ", 2)
+	if len(parts) == 2 && parts[0] != "" {
+		return parts[0] + " " + redactedValue
+	}
+	return redactedValue
+}
+
 func (b *AccesslogCtl) Build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -64,9 +88,16 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 		}
 
 		if b.allowTrace {
-			al.Auth = c.Request.Header.Get(Auth)
+			auth := c.Request.Header.Get(Auth)
+			token := c.Request.Header.Get(Token)
+			if b.allowSensitiveCredentials {
+				al.Auth = auth
+				al.Token = token
+			} else {
+				al.Auth = redactCredential(auth)
+				al.Token = redactCredential(token)
+			}
 			al.Plaform = c.Request.Header.Get(Plaform)
-			al.Token = c.Request.Header.Get(Token)
 			al.TraceId = c.Request.Header.Get(TraceIdName)
 			if al.TraceId == "" {
 				al.TraceId = pkg.GenUuid()
@@ -102,8 +133,12 @@ func (b *AccesslogCtl) Build() gin.HandlerFunc {
 		defer func() {
 			al.Duration = time.Since(start).String()
 			if b.allowStamp && c.Keys != nil {
-				if sn, ok := c.Keys["sn"].(string); ok { al.Sn = sn }
-				if guid, ok := c.Keys["guid"].(string); ok { al.Guid = guid }
+				if sn, ok := c.Keys["sn"].(string); ok {
+					al.Sn = sn
+				}
+				if guid, ok := c.Keys["guid"].(string); ok {
+					al.Guid = guid
+				}
 			}
 			b.logFunc(c, al)
 		}()
@@ -136,7 +171,9 @@ func (al AccessLog) String() string {
 	b, err := json.Marshal(al)
 	if err != nil {
 		logger := al.logger
-		if logger == nil { logger = logx.NewNoOpLogger() }
+		if logger == nil {
+			logger = logx.NewNoOpLogger()
+		}
 		logger.Warn("AccessLog Marshal Error %v", err)
 	}
 	return string(b)
