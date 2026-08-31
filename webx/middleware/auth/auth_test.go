@@ -13,29 +13,48 @@ package auth_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/webx/middleware/auth"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Auth(t *testing.T) {
-	// accesslog.SetLogger(logx.NewNoOpLogger())
-	authList := map[auth.AUTH]auth.NAME{
-		auth.AUTH("MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4"): auth.NAME("LS-cloud-config"),
-	}
-	md := auth.NewBuilder(authList).Build()
+	gin.SetMode(gin.TestMode)
 
-	ctx := &gin.Context{
-		Request: &http.Request{
-			Header: http.Header{},
-			// Body: io.NopCloser(bytes.NewBufferString("hello")),
-			// URL: &url.URL{
-			// Path: "/accesslog",
-			// },
-			Method: "GET",
-		},
+	authValue := "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4"
+	authList := auth.AuthPair{
+		auth.AUTH(authValue): auth.NAME("LS-cloud-config"),
 	}
 
-	md(ctx)
+	engine := gin.New()
+	engine.Use(auth.NewBuilder(authList).Build())
+	engine.GET("/", func(c *gin.Context) {
+		name, exists := c.Get("auth")
+		assert.True(t, exists)
+		assert.Equal(t, auth.NAME("LS-cloud-config"), name)
+		c.String(http.StatusOK, "ok")
+	})
+
+	t.Run("authorized", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Authorization", authValue)
+		recorder := httptest.NewRecorder()
+
+		engine.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, "ok", recorder.Body.String())
+	})
+
+	t.Run("unauthorized", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		recorder := httptest.NewRecorder()
+
+		engine.ServeHTTP(recorder, req)
+
+		assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+	})
 }
