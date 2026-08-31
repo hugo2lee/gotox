@@ -1,4 +1,4 @@
-name: security-v0.2.1
+name: security-v0.3.0
 
 on:
   push:
@@ -17,13 +17,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'
+          go-version: '1.25.x'
           cache: true
       - name: Upgrade vulnerable dependencies
         run: |
+          go mod edit -go=1.25
           go get \
             github.com/go-viper/mapstructure/v2@v2.4.0 \
-            golang.org/x/crypto@v0.45.0 \
+            golang.org/x/crypto@v0.51.0 \
             filippo.io/edwards25519@v1.1.1 \
             github.com/jackc/pgx/v5@v5.9.0 \
             go.mongodb.org/mongo-driver@v1.17.7 \
