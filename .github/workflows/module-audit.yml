@@ -19,14 +19,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Trace residual vulnerable modules
+      - name: Trace x/arch and x/tools residuals
         run: |
-          for module in \
-            golang.org/x/crypto \
-            github.com/yuin/goldmark \
-            golang.org/x/mod \
-            gopkg.in/yaml.v2 \
-            rsc.io/pdf; do
+          for module in golang.org/x/arch golang.org/x/tools rsc.io/pdf github.com/yuin/goldmark; do
             echo "=== WHY ${module} ==="
             go mod why -m "${module}" || true
             echo "=== GRAPH PARENTS ${module} ==="
@@ -35,8 +30,8 @@ jobs:
 
           echo '=== AVAILABLE UPDATES ==='
           go list -m -u \
+            golang.org/x/arch \
+            golang.org/x/tools \
             github.com/yuin/goldmark \
             golang.org/x/mod \
-            gopkg.in/yaml.v2 \
-            rsc.io/pdf \
-            golang.org/x/crypto || true
+            gopkg.in/yaml.v2 || true
