@@ -68,7 +68,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/yuin/goldmark v1.8.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/arch v0.30.0 // indirect
+	golang.org/x/arch v0.18.0 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
