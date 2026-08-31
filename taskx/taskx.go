@@ -16,16 +16,8 @@ import (
 	"github.com/hugo2lee/gotox/logx"
 )
 
-var logg logx.Logger = logx.Log
-
-// // 自定义的logger，建议实例化赋予
-func SetLogger(l logx.Logger) {
-	logg = l
-}
-
 type Task interface {
 	Name() string
-	// task with context, run in new goroutine, context is canceled when interrupt
 	Run(context.Context)
 }
 
@@ -35,28 +27,36 @@ type Taskx struct {
 }
 
 func NewTaskx(name string, fn func(ctx context.Context)) *Taskx {
-	return &Taskx{
-		name: name,
-		fn:   fn,
+	return &Taskx{name: name, fn: fn}
+}
+
+func (t *Taskx) Name() string { return t.name }
+func (t *Taskx) Run(ctx context.Context) { t.fn(ctx) }
+
+type GroupOption func(*TaskxGroup)
+
+func WithLogger(logger logx.Logger) GroupOption {
+	return func(g *TaskxGroup) {
+		if logger != nil {
+			g.logger = logger
+		}
 	}
-}
-
-func (t *Taskx) Name() string {
-	return t.name
-}
-
-func (t *Taskx) Run(ctx context.Context) {
-	t.fn(ctx)
 }
 
 type TaskxGroup struct {
-	tasks map[string]Task
+	tasks  map[string]Task
+	logger logx.Logger
 }
 
-func NewTaskxGroup() *TaskxGroup {
-	return &TaskxGroup{
-		tasks: make(map[string]Task),
+func NewTaskxGroup(opts ...GroupOption) *TaskxGroup {
+	g := &TaskxGroup{
+		tasks:  make(map[string]Task),
+		logger: logx.NewNoOpLogger(),
 	}
+	for _, opt := range opts {
+		opt(g)
+	}
+	return g
 }
 
 func (t *TaskxGroup) AddTask(tasks ...Task) {
@@ -68,6 +68,6 @@ func (t *TaskxGroup) AddTask(tasks ...Task) {
 func (t *TaskxGroup) Run(ctx context.Context) {
 	for _, f := range t.tasks {
 		go f.Run(ctx)
-		logg.Info("task \"%s\" is running \n", f.Name())
+		t.logger.Info("task \"%s\" is running \n", f.Name())
 	}
 }

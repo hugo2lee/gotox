@@ -29,7 +29,7 @@ import (
 func TestDefaultDB(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-	dbGorm, err := ormx.New(conf, logx.Log)
+	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger())
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB()
@@ -49,7 +49,7 @@ func TestMysqlDB(t *testing.T) {
 	conf := configx.New(configx.WithPath("../conf"))
 
 	pj := "test7"
-	dbGorm, err := ormx.New(conf, logx.Log, ormx.WithMysql(pj))
+	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithMysql(pj))
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB(pj)
@@ -71,7 +71,7 @@ func TestWithMysqlMultipleDb(t *testing.T) {
 	db1 := "test1"
 	db2 := "test2"
 
-	dbGorm, err := ormx.New(conf, logx.Log, ormx.WithMysqlMultipleDb(db1, db2))
+	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithMysqlMultipleDb(db1, db2))
 	assert.NoError(t, err)
 
 	type User struct {
@@ -100,7 +100,7 @@ func TestPgDB(t *testing.T) {
 	conf := configx.New(configx.WithPath("../conf"))
 
 	pj := "test2"
-	dbGorm, err := ormx.New(conf, logx.Log, ormx.WithPostgres(pj))
+	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithPostgres(pj))
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB(pj)

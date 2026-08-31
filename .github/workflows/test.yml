@@ -1,0 +1,36 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Compile all packages and tests
+        run: go test -run '^$' ./...
+
+      - name: Focused P0 tests
+        run: |
+          go test ./taskx
+          go test ./resourcex -run '^TestResourcer$'
+          go test ./webx
+          go test ./webx/middleware/accesslog
+          go test ./webx/middleware/auth
+          go test ./webx/middleware/hashresponse
+
+      - name: Focused race tests
+        run: go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse

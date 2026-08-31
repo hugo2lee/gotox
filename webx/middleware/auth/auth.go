@@ -15,14 +15,6 @@ import (
 	"github.com/hugo2lee/gotox/logx"
 )
 
-// 受制于泛型，这里只能使用包变量，如无任何实例赋予就用这个
-var logg logx.Logger = logx.Log
-
-// // 自定义的logger，建议实例化赋予
-func SetLogger(l logx.Logger) {
-	logg = l
-}
-
 type (
 	AUTH string
 	NAME string
@@ -32,12 +24,21 @@ type AuthPair map[AUTH]NAME
 
 type Auth struct {
 	authList AuthPair
+	logger   logx.Logger
 }
 
 func NewBuilder(list AuthPair) *Auth {
 	return &Auth{
 		authList: list,
+		logger:   logx.NewNoOpLogger(),
 	}
+}
+
+func (b *Auth) WithLogger(logger logx.Logger) *Auth {
+	if logger != nil {
+		b.logger = logger
+	}
+	return b
 }
 
 func (b *Auth) Build() gin.HandlerFunc {
@@ -45,7 +46,7 @@ func (b *Auth) Build() gin.HandlerFunc {
 		au := c.GetHeader("Authorization")
 
 		if val, ok := b.authList[AUTH(au)]; !ok {
-			logg.Warn("Unauthorized %v", au)
+			b.logger.Warn("Unauthorized %v", au)
 			c.AbortWithStatusJSON(401, gin.H{
 				"code":    401,
 				"message": "Unauthorized",
@@ -58,7 +59,6 @@ func (b *Auth) Build() gin.HandlerFunc {
 			c.Keys["auth"] = val
 		}
 
-		// 这里会执行到业务代码
 		c.Next()
 	}
 }

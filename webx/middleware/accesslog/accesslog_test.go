@@ -11,37 +11,41 @@
 package accesslog_test
 
 import (
-	"bytes"
 	"context"
-	"io"
-	"log"
 	"net/http"
-	"net/url"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_AccessLog(t *testing.T) {
-	// accesslog.SetLogger(logx.NewNoOpLogger())
-	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
-		log.Printf("ACCESS %v \n", al)
+	gin.SetMode(gin.TestMode)
+
+	var got accesslog.AccessLog
+	md := accesslog.NewBuilder(func(_ context.Context, al accesslog.AccessLog) {
+		got = al
 	}).AllowTrace().AllowStamp().AllowQuery().AllowReqBody().AllowRespBody().Build()
 
-	ctx := &gin.Context{
-		Request: &http.Request{
-			// Header: http.Header{},
-			Body: io.NopCloser(bytes.NewBufferString("hello")),
-			URL: &url.URL{
-				Path: "/accesslog?a=1",
-			},
-			Method: "GET",
-		},
-	}
-	// ctx.Keys = make(map[string]any)
-	// ctx.Keys["sn"] = "client-sn"
-	// ctx.Keys["guid"] = "client-guid"
+	engine := gin.New()
+	engine.Use(md)
+	engine.POST("/accesslog", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
 
-	md(ctx)
+	req := httptest.NewRequest(http.MethodPost, "/accesslog?a=1", strings.NewReader("hello"))
+	req.Header.Set(accesslog.TraceIdName, "trace-id")
+	recorder := httptest.NewRecorder()
+
+	engine.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, "pong", recorder.Body.String())
+	assert.Equal(t, "trace-id", got.TraceId)
+	assert.Equal(t, "a=1", got.Query)
+	assert.Equal(t, "hello", got.ReqBody)
+	assert.Equal(t, "pong", got.RespBody)
 }
