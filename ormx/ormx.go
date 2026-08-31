@@ -35,13 +35,22 @@ const (
 	DefaultPostgresProjectName = "public"
 )
 
-type BaseModel struct {
+// GormModel is a persistence-layer convenience model for GORM-backed records.
+// It intentionally contains GORM-specific types and tags and should not be used
+// as a domain entity base type.
+type GormModel struct {
 	ID      uint  `gorm:"primaryKey;autoIncrement"`
 	Created int64 `gorm:"autoCreateTime:milli"`
 	Updated int64 `gorm:"autoUpdateTime:milli"`
 	Deleted gorm.DeletedAt
 	UUID    string `gorm:"size:36;uniqueIndex"`
 }
+
+// BaseModel is kept as a source-compatible alias for existing users.
+//
+// Deprecated: use GormModel for persistence models. Domain entities should own
+// their fields and must not depend on this GORM-specific convenience type.
+type BaseModel = GormModel
 
 type Option func(*Ormx) error
 
