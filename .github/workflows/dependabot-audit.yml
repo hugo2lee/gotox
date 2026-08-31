@@ -7,30 +7,69 @@ on:
 
 permissions:
   contents: read
-  security-events: read
 
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Read open Dependabot alerts
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Scan reachable Go vulnerabilities
         run: |
-          gh api --paginate \
-            -H 'Accept: application/vnd.github+json' \
-            -H 'X-GitHub-Api-Version: 2022-11-28' \
-            "/repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" > alerts.json
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          set +e
+          govulncheck -show verbose ./... | tee govulncheck.txt
+          echo "GOVULNCHECK_EXIT=${PIPESTATUS[0]}"
+          set -e
 
-          echo '=== OPEN DEPENDABOT ALERTS ==='
-          jq -r '.[] | [
-            (.number|tostring),
-            .dependency.package.name,
-            .dependency.manifest_path,
-            .security_advisory.severity,
-            (.security_advisory.cve_id // .security_advisory.ghsa_id),
-            .security_vulnerability.vulnerable_version_range,
-            (.security_vulnerability.first_patched_version.identifier // "NO_PATCH")
-          ] | @tsv' alerts.json
+      - name: Scan every module with OSV
+        run: |
+          go list -m -f '{{if not .Main}}{{.Path}}\t{{.Version}}{{end}}' all | sed '/^$/d' > modules.tsv
+          python3 - <<'PY'
+          import json, urllib.request
 
-          echo "OPEN_ALERT_COUNT=$(jq 'length' alerts.json)"
+          findings = []
+          with open('modules.tsv', encoding='utf-8') as f:
+              modules = [line.rstrip('\n').split('\t', 1) for line in f if line.strip()]
+
+          for name, version in modules:
+              payload = json.dumps({
+                  'package': {'ecosystem': 'Go', 'name': name},
+                  'version': version,
+              }).encode()
+              req = urllib.request.Request(
+                  'https://api.osv.dev/v1/query',
+                  data=payload,
+                  headers={'Content-Type': 'application/json'},
+              )
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  result = json.load(resp)
+              for vuln in result.get('vulns', []):
+                  fixed = set()
+                  for affected in vuln.get('affected', []):
+                      pkg = affected.get('package', {})
+                      if pkg.get('ecosystem') != 'Go' or pkg.get('name') != name:
+                          continue
+                      for r in affected.get('ranges', []):
+                          for event in r.get('events', []):
+                              if event.get('fixed'):
+                                  fixed.add(event['fixed'])
+                  findings.append({
+                      'module': name,
+                      'version': version,
+                      'id': vuln.get('id'),
+                      'aliases': vuln.get('aliases', []),
+                      'summary': vuln.get('summary', ''),
+                      'fixed': sorted(fixed),
+                  })
+
+          print('=== OSV MODULE FINDINGS ===')
+          for item in findings:
+              print(json.dumps(item, ensure_ascii=False, sort_keys=True))
+          print(f'OSV_FINDING_COUNT={len(findings)}')
+          PY
