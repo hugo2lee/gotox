@@ -20,6 +20,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Static analysis
+        run: go vet ./...
+
       - name: Default test baseline
         run: go test ./...
 
