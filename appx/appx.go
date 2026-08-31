@@ -58,9 +58,9 @@ func (app *Appx) addResource(res resourcex.Resource) {
 
 func (app *Appx) EnableDB(ops ...ormx.Option) *Appx {
 	if app.DBs == nil {
-		orm, err := ormx.New(app.Configx, app.Logger, ops...)
+		orm, err := ormx.Dial(app.Configx, app.Logger, ops...)
 		if err != nil {
-			log.Fatalf("orm new failed, %+v", err)
+			log.Fatalf("orm dial failed, %+v", err)
 		}
 		app.DBs = orm
 		app.addResource(app.DBs)
