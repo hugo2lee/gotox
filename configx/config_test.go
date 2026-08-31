@@ -39,10 +39,29 @@ dir = "test.log"
 client = "client-auth"
 `), 0o600))
 
-	c := configx.New(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
+	c, err := configx.Load(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
+	require.NoError(t, err)
 	assert.Equal(t, "test.log", c.LogDir())
 
 	cu := custom{c}
 	assert.Equal(t, "custom log dir", cu.LogDir())
 	assert.Equal(t, map[string]string{"client": "client-auth"}, cu.Auths())
+}
+
+func TestLoadReturnsInvalidModeError(t *testing.T) {
+	_, err := configx.Load(configx.WithMode("invalid"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid mode")
+}
+
+func TestLoadReturnsInvalidPathError(t *testing.T) {
+	_, err := configx.Load(configx.WithPath(""))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must not be empty")
+}
+
+func TestLoadReturnsMissingConfigError(t *testing.T) {
+	_, err := configx.Load(configx.WithPath(t.TempDir()), configx.WithMode(configx.RUNDEV))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "read dev config")
 }
