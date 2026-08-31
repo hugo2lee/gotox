@@ -16,9 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hugo2lee/gotox/configx"
-	"github.com/hugo2lee/gotox/logx"
-	"github.com/hugo2lee/gotox/redisx"
 	"github.com/hugo2lee/gotox/resourcex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,19 +82,4 @@ func TestResourceGroupReturnsContextErrorOnTimeout(t *testing.T) {
 
 	err := group.CloseAll(ctx)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
-}
-
-func TestRedisResource(t *testing.T) {
-	t.Log("integration test: requires ../conf and a real redis service")
-
-	conf := configx.New(configx.WithPath("../conf"))
-	rds, err := redisx.New(conf, logx.New(conf))
-	assert.NoError(t, err)
-
-	group := resourcex.NewResourcexGroup()
-	group.AddResource(rds)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	assert.NoError(t, group.CloseAll(ctx))
 }

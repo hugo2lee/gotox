@@ -28,7 +28,16 @@ type Redisx struct {
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*Redisx, error) {
+// NewWithClient wires an existing Redis client into Redisx without network I/O.
+func NewWithClient(client *redis.Client, logger logx.Logger) *Redisx {
+	if logger == nil {
+		logger = logx.NewNoOpLogger()
+	}
+	return &Redisx{rds: client, logger: logger}
+}
+
+// Dial creates and verifies a Redis client from configuration.
+func Dial(ctx context.Context, conf *configx.Configx, logger logx.Logger) (*Redisx, error) {
 	url := conf.RedisUrl()
 
 	opt, err := redis.ParseURL(url)
@@ -36,17 +45,26 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Redisx, error) {
 		return nil, err
 	}
 
-	rdb := redis.NewClient(opt)
-
-	result, err := rdb.Ping(context.Background()).Result()
+	client := redis.NewClient(opt)
+	result, err := client.Ping(ctx).Result()
 	if err != nil {
+		_ = client.Close()
 		return nil, errors.Wrap(err, "redis connect error")
 	}
 	if result != "PONG" {
+		_ = client.Close()
 		return nil, errors.New("redis ping error")
 	}
 
-	return &Redisx{rdb, logCli}, nil
+	return NewWithClient(client, logger), nil
+}
+
+// New is the compatibility constructor that dials Redis immediately.
+//
+// Deprecated: use Dial when connection ownership belongs here, or
+// NewWithClient when the caller/composition root already owns the client.
+func New(conf *configx.Configx, logger logx.Logger) (*Redisx, error) {
+	return Dial(context.Background(), conf, logger)
 }
 
 func (c *Redisx) Name() string {

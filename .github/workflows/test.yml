@@ -20,17 +20,14 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Compile all packages and tests
-        run: go test -run '^$' ./...
+      - name: Static analysis
+        run: go vet ./...
 
-      - name: Focused P0 tests
-        run: |
-          go test ./taskx
-          go test ./resourcex -run '^TestResource'
-          go test ./webx
-          go test ./webx/middleware/accesslog
-          go test ./webx/middleware/auth
-          go test ./webx/middleware/hashresponse
+      - name: Default test baseline
+        run: go test ./...
 
-      - name: Focused race tests
-        run: go test -race ./resourcex -run '^TestResource' && go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse
+      - name: Default race baseline
+        run: go test -race ./...
+
+      - name: Compile integration suite
+        run: go test -tags=integration -run '^$' ./...

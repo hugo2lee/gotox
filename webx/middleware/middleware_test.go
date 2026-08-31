@@ -17,17 +17,13 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"hash"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
 	"github.com/hugo2lee/gotox/webx/middleware/auth"
 	"github.com/hugo2lee/gotox/webx/middleware/hashresponse"
@@ -35,66 +31,53 @@ import (
 )
 
 func Test_AccessLog(t *testing.T) {
-	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
-		log.Printf("ACCESS %v \n", al)
-	}).
+	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {}).
 		AllowTrace().
 		AllowStamp().
 		AllowQuery().AllowReqBody().AllowRespBody().Build()
 
 	recorder := httptest.NewRecorder()
-
 	req := httptest.NewRequest(http.MethodPost, "/ping?name=hugo&age=18&gender=male", io.NopCloser(bytes.NewBufferString("hello")))
-	req.Header.Set("Authorization", "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4")
+	req.Header.Set("Authorization", "test-auth")
 	req.Header.Set(accesslog.TraceIdName, "traceid-xxxx123")
 	req.Header.Set(accesslog.SpanIdName, "trace-this-span-xxxx123")
 	req.Header.Set(accesslog.ParentSpanIdName, "trace-parent-span-xxxx123")
 
-	svr := gin.Default()
+	svr := gin.New()
 	svr.Use(md)
 	svr.POST("/ping", func(c *gin.Context) {
-		if c.Keys == nil {
-			c.Keys = make(map[string]any)
-		}
-		c.Keys["sn"] = "client-xx-sn"
-		c.Keys["guid"] = "client-xx-guid"
-		time.Sleep(1 * time.Second)
-		c.String(200, "pong")
+		c.Set("sn", "client-xx-sn")
+		c.Set("guid", "client-xx-guid")
+		c.String(http.StatusOK, "pong")
 	})
 
 	svr.ServeHTTP(recorder, req)
-
-	log.Printf("resp %v \n", recorder.Body.String())
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, "pong", recorder.Body.String())
+	assert.Equal(t, "traceid-xxxx123", recorder.Header().Get(accesslog.TraceIdName))
 }
 
 func Test_Auth(t *testing.T) {
-	conf := configx.New(configx.WithPath("../../conf"))
-	aus := conf.Auths()
-	authList := make(auth.AuthPair, len(aus))
-	for name, au := range aus {
-		authList[auth.AUTH(au)] = auth.NAME(name)
+	authList := auth.AuthPair{
+		auth.AUTH("client-auth"): auth.NAME("client"),
 	}
-
 	md := auth.NewBuilder(authList).Build()
 
-	svr := gin.Default()
+	svr := gin.New()
 	svr.Use(md)
 	svr.POST("/ping", func(c *gin.Context) {
-		fmt.Printf("ACCESS client %v \n", c.Keys["auth"])
-		time.Sleep(1 * time.Second)
-		c.String(200, "pong")
+		c.String(http.StatusOK, "%v", c.Keys["auth"])
 	})
 
 	recorder := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/ping", io.NopCloser(bytes.NewBufferString("hello")))
-	req.Header.Set("Authorization", "MTI6ZmRiNWMxMWQtYzc2OC00MzgzLTgyNjItZTY0NmFhNTE1YjU4")
-
+	req.Header.Set("Authorization", "client-auth")
 	svr.ServeHTTP(recorder, req)
 
-	log.Printf("resp %v \n", recorder.Body.String())
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, "client", recorder.Body.String())
 }
 
-// calculateHash 计算哈希值
 func calculateHash(t *testing.T, hasher hash.Hash, data string) string {
 	_, err := hasher.Write([]byte(data))
 	assert.NoError(t, err, "Failed to write data to hasher")
@@ -102,14 +85,10 @@ func calculateHash(t *testing.T, hasher hash.Hash, data string) string {
 }
 
 func Test_HashResponse(t *testing.T) {
-	// 创建 ResponseHashBuilder 中间件
 	hashMiddle := hashresponse.NewBuilder().WithMd5().WithSha1().WithSha256().Build()
-
-	// 设置响应
 	expectBody := "Hello, World!11122"
 
-	// 模拟 Gin 服务和请求
-	svr := gin.Default()
+	svr := gin.New()
 	svr.Use(hashMiddle)
 	uri := "/ping"
 	svr.GET(uri, func(c *gin.Context) {
@@ -121,12 +100,7 @@ func Test_HashResponse(t *testing.T) {
 	resp := recorder.Result()
 	respBody := recorder.Body.String()
 	assert.Equal(t, expectBody, respBody)
-	// 验证响应头中的哈希值
-	expectedMd5 := resp.Header.Get("Content-Md5")
-	expectedSha1 := resp.Header.Get("Content-Sha1")
-	expectedSha256 := resp.Header.Get("Content-Sha256")
-
-	assert.Equal(t, expectedMd5, calculateHash(t, md5.New(), expectBody), "MD5 hash mismatch")
-	assert.Equal(t, expectedSha1, calculateHash(t, sha1.New(), expectBody), "SHA1 hash mismatch")
-	assert.Equal(t, expectedSha256, calculateHash(t, sha256.New(), expectBody), "SHA256 hash mismatch")
+	assert.Equal(t, resp.Header.Get("Content-Md5"), calculateHash(t, md5.New(), expectBody), "MD5 hash mismatch")
+	assert.Equal(t, resp.Header.Get("Content-Sha1"), calculateHash(t, sha1.New(), expectBody), "SHA1 hash mismatch")
+	assert.Equal(t, resp.Header.Get("Content-Sha256"), calculateHash(t, sha256.New(), expectBody), "SHA256 hash mismatch")
 }

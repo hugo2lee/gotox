@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
  * @Author: hugo
  * @Date: 2024-04-19 17:23
@@ -21,15 +23,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMongo(t *testing.T) {
+func TestMongoIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
 	logger := logx.New(conf)
-	db, err := mongox.New(conf, logger)
+	db, err := mongox.Dial(context.Background(), conf, logger)
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
 
-	reslut, err := db.DB().Collection("user").InsertOne(context.TODO(), map[string]string{"name": "hugo"})
+	result, err := db.DB().Collection("user").InsertOne(context.Background(), map[string]string{"name": "hugo"})
 	assert.NoError(t, err)
-	log.Println(reslut)
+	log.Println(result)
 }

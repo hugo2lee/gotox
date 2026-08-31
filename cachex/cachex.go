@@ -23,6 +23,10 @@ var (
 	_ Cachexer           = (*Cachex)(nil)
 )
 
+// Cachexer is kept for source compatibility with existing users.
+//
+// Deprecated: consumers should define the smallest cache interface they need
+// at the consuming boundary. New returns *Cachex directly.
 type Cachexer interface {
 	Name() string
 	Set(key string, value any)
@@ -52,7 +56,7 @@ func WithCleanupInterval(cleanupInterval time.Duration) Option {
 	}
 }
 
-func New(opts ...Option) Cachexer {
+func New(opts ...Option) *Cachex {
 	ca := &Cachex{}
 	for _, opt := range opts {
 		opt(ca)

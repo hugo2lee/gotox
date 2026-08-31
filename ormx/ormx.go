@@ -35,13 +35,22 @@ const (
 	DefaultPostgresProjectName = "public"
 )
 
-type BaseModel struct {
+// GormModel is a persistence-layer convenience model for GORM-backed records.
+// It intentionally contains GORM-specific types and tags and should not be used
+// as a domain entity base type.
+type GormModel struct {
 	ID      uint  `gorm:"primaryKey;autoIncrement"`
 	Created int64 `gorm:"autoCreateTime:milli"`
 	Updated int64 `gorm:"autoUpdateTime:milli"`
 	Deleted gorm.DeletedAt
 	UUID    string `gorm:"size:36;uniqueIndex"`
 }
+
+// BaseModel is kept as a source-compatible alias for existing users.
+//
+// Deprecated: use GormModel for persistence models. Domain entities should own
+// their fields and must not depend on this GORM-specific convenience type.
+type BaseModel = GormModel
 
 type Option func(*Ormx) error
 
@@ -51,13 +60,23 @@ type Ormx struct {
 	gorms  map[string]*gorm.DB
 }
 
-// New new Ormx with mysql default tableNamePrefix empty
-func New(conf *configx.Configx, logCli logx.Logger, ops ...Option) (*Ormx, error) {
-	orm := &Ormx{
-		conf,
-		logCli,
-		make(map[string]*gorm.DB),
+// NewWithDBs wires existing GORM databases into Ormx without opening or
+// verifying any database connection. The database map is copied so callers do
+// not share mutable map ownership with Ormx.
+func NewWithDBs(conf *configx.Configx, logger logx.Logger, dbs map[string]*gorm.DB) *Ormx {
+	if logger == nil {
+		logger = logx.NewNoOpLogger()
 	}
+	gorms := make(map[string]*gorm.DB, len(dbs))
+	for name, db := range dbs {
+		gorms[name] = db
+	}
+	return &Ormx{conf: conf, logger: logger, gorms: gorms}
+}
+
+// Dial creates and verifies GORM databases from the configured options.
+func Dial(conf *configx.Configx, logger logx.Logger, ops ...Option) (*Ormx, error) {
+	orm := NewWithDBs(conf, logger, nil)
 
 	if ops == nil {
 		if err := WithMysql(DefaultProjectName)(orm); err != nil {
@@ -73,6 +92,14 @@ func New(conf *configx.Configx, logCli logx.Logger, ops ...Option) (*Ormx, error
 	}
 
 	return orm, nil
+}
+
+// New is the compatibility constructor that dials configured databases.
+//
+// Deprecated: use Dial when Ormx owns database creation, or NewWithDBs when
+// the caller/composition root already owns the *gorm.DB values.
+func New(conf *configx.Configx, logger logx.Logger, ops ...Option) (*Ormx, error) {
+	return Dial(conf, logger, ops...)
 }
 
 func (orm *Ormx) dialDB(dialer gorm.Dialector, tablePrefix string) (*gorm.DB, error) {

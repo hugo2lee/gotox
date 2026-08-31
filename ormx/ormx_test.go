@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
  * @Author: hugo
  * @Date: 2024-04-19 16:24
@@ -26,136 +28,85 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func TestDefaultDB(t *testing.T) {
+func TestDefaultDBIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger())
+	dbGorm, err := ormx.Dial(conf, logx.NewNoOpLogger())
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB()
-
-	type User struct {
-		Name string
-	}
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = db.Model(&User{}).Create(&User{Name: "hugo"}).Error
-	assert.NoError(t, err)
+	type User struct{ Name string }
+	assert.NoError(t, db.AutoMigrate(&User{}))
+	assert.NoError(t, db.Model(&User{}).Create(&User{Name: "hugo"}).Error)
 }
 
-func TestMysqlDB(t *testing.T) {
+func TestMysqlDBIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-
 	pj := "test7"
-	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithMysql(pj))
+	dbGorm, err := ormx.Dial(conf, logx.NewNoOpLogger(), ormx.WithMysql(pj))
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB(pj)
-
-	type User struct {
-		Name string
-	}
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = db.Model(&User{}).Create(&User{Name: "hugo"}).Error
-	assert.NoError(t, err)
+	type User struct{ Name string }
+	assert.NoError(t, db.AutoMigrate(&User{}))
+	assert.NoError(t, db.Model(&User{}).Create(&User{Name: "hugo"}).Error)
 }
 
-func TestWithMysqlMultipleDb(t *testing.T) {
+func TestWithMysqlMultipleDbIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-
 	db1 := "test1"
 	db2 := "test2"
 
-	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithMysqlMultipleDb(db1, db2))
+	dbGorm, err := ormx.Dial(conf, logx.NewNoOpLogger(), ormx.WithMysqlMultipleDb(db1, db2))
 	assert.NoError(t, err)
 
-	type User struct {
-		Name string
-	}
-
-	dbEn1 := dbGorm.GetDB(db1)
-
-	err = dbEn1.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = dbEn1.Model(&User{}).Create(&User{Name: "hugo-db1"}).Error
-	assert.NoError(t, err)
-
-	dbEn2 := dbGorm.GetDB(db2)
-
-	err = dbEn2.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = dbEn2.Model(&User{}).Create(&User{Name: "hugo-db2"}).Error
-	assert.NoError(t, err)
+	type User struct{ Name string }
+	assert.NoError(t, dbGorm.GetDB(db1).AutoMigrate(&User{}))
+	assert.NoError(t, dbGorm.GetDB(db1).Model(&User{}).Create(&User{Name: "hugo-db1"}).Error)
+	assert.NoError(t, dbGorm.GetDB(db2).AutoMigrate(&User{}))
+	assert.NoError(t, dbGorm.GetDB(db2).Model(&User{}).Create(&User{Name: "hugo-db2"}).Error)
 }
 
-func TestPgDB(t *testing.T) {
+func TestPgDBIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
-
 	pj := "test2"
-	dbGorm, err := ormx.New(conf, logx.NewNoOpLogger(), ormx.WithPostgres(pj))
+	dbGorm, err := ormx.Dial(conf, logx.NewNoOpLogger(), ormx.WithPostgres(pj))
 	assert.NoError(t, err)
 
 	db := dbGorm.GetDB(pj)
-
-	type User struct {
-		Name string
-	}
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = db.Model(&User{}).Create(&User{Name: "hugo"}).Error
-	assert.NoError(t, err)
+	type User struct{ Name string }
+	assert.NoError(t, db.AutoMigrate(&User{}))
+	assert.NoError(t, db.Model(&User{}).Create(&User{Name: "hugo"}).Error)
 }
 
-func TestGormMysql(t *testing.T) {
+func TestGormMysqlIntegration(t *testing.T) {
 	t.Parallel()
 	dsn := "root:root@tcp(localhost:3306)/dev?charset=utf8mb4&parseTime=True&loc=Local"
-
-	db, err := gorm.Open(
-		mysql.Open(dsn),
-		&gorm.Config{
-			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
-			},
-		})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{SingularTable: true},
+	})
 	assert.NoError(t, err)
 
-	type User struct {
-		Name string
-	}
-
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
+	type User struct{ Name string }
+	assert.NoError(t, db.AutoMigrate(&User{}))
 }
 
-func TestGormPostgres(t *testing.T) {
+func TestGormPostgresIntegration(t *testing.T) {
 	t.Parallel()
 	dsn := "postgres://root:root@localhost:5432/dev?search_path=dev-schema&sslmode=disable&timezone=Asia/Shanghai"
-
-	db, err := gorm.Open(
-		postgres.Open(dsn),
-		&gorm.Config{
-			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
-			},
-		})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{SingularTable: true},
+	})
 	assert.NoError(t, err)
 
 	type User struct {
 		Id   int64
 		Name string
 	}
-
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
+	assert.NoError(t, db.AutoMigrate(&User{}))
 }
 
 type BaseModel struct {
@@ -175,42 +126,27 @@ func (u *BaseModel) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func TestGormBaseModel(t *testing.T) {
+func TestGormBaseModelIntegration(t *testing.T) {
 	t.Parallel()
 	dsn := "root:root@tcp(localhost:3306)/dev?charset=utf8mb4&parseTime=True&loc=Local"
-
-	db, err := gorm.Open(
-		mysql.Open(dsn),
-		&gorm.Config{
-			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
-			},
-		})
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{SingularTable: true},
+	})
 	assert.NoError(t, err)
 
 	db = db.Debug()
-
 	type User struct {
 		BaseModel
 		Name string
 	}
 
-	err = db.AutoMigrate(&User{})
-	assert.NoError(t, err)
-
-	err = db.Create(&User{Name: "erica"}).Error
-	assert.NoError(t, err)
-
-	err = db.Where("name = ?", "hugo").Delete(&User{}).Error
-	assert.NoError(t, err)
+	assert.NoError(t, db.AutoMigrate(&User{}))
+	assert.NoError(t, db.Create(&User{Name: "erica"}).Error)
+	assert.NoError(t, db.Where("name = ?", "hugo").Delete(&User{}).Error)
 
 	var user User
-	err = db.Where("name = ?", "erica").First(&user).Error
-	assert.NoError(t, err)
-
+	assert.NoError(t, db.Where("name = ?", "erica").First(&user).Error)
 	user.Name = "hugo"
-	err = db.Save(&user).Error
-	assert.NoError(t, err)
-
+	assert.NoError(t, db.Save(&user).Error)
 	fmt.Println("=== end ===")
 }

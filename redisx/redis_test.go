@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
  * @Author: hugo
  * @Date: 2024-04-17 17:16
@@ -21,11 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedis(t *testing.T) {
+func TestRedisIntegration(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
 	logger := logx.New(conf)
-	cli, err := redisx.New(conf, logger)
+	cli, err := redisx.Dial(context.Background(), conf, logger)
 
 	assert.NoError(t, err)
 	cmd := cli.DB()
