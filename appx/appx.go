@@ -12,7 +12,7 @@ package appx
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -38,12 +38,32 @@ type Appx struct {
 	TaskxGroup     *taskx.TaskxGroup
 }
 
-func New(opt ...configx.Option) *Appx {
-	conf := configx.New(opt...)
+// Build constructs Appx and returns configuration/logger initialization errors
+// to the caller. Prefer this path when the composition root owns failure policy.
+func Build(opt ...configx.Option) (*Appx, error) {
+	conf, err := configx.Load(opt...)
+	if err != nil {
+		return nil, fmt.Errorf("load config: %w", err)
+	}
+	logger, err := logx.Open(conf)
+	if err != nil {
+		return nil, fmt.Errorf("open logger: %w", err)
+	}
 	return &Appx{
 		Configx: conf,
-		Logger:  logx.New(conf),
+		Logger:  logger,
+	}, nil
+}
+
+// New is the fail-fast compatibility constructor.
+//
+// Prefer Build when the caller needs explicit error handling.
+func New(opt ...configx.Option) *Appx {
+	app, err := Build(opt...)
+	if err != nil {
+		panic(err)
 	}
+	return app
 }
 
 func WithConfigPath(path string) configx.Option { return configx.WithPath(path) }
@@ -56,21 +76,34 @@ func (app *Appx) addResource(res resourcex.Resource) {
 	app.ResourcexGroup.AddResource(res)
 }
 
-func (app *Appx) EnableDB(ops ...ormx.Option) *Appx {
+// TryEnableDB enables or extends ORM configuration and returns failures to the
+// caller instead of deciding process lifetime inside the library.
+func (app *Appx) TryEnableDB(ops ...ormx.Option) error {
 	if app.DBs == nil {
 		orm, err := ormx.Dial(app.Configx, app.Logger, ops...)
 		if err != nil {
-			log.Fatalf("orm dial failed, %+v", err)
+			return fmt.Errorf("dial orm: %w", err)
 		}
 		app.DBs = orm
 		app.addResource(app.DBs)
 		app.Logger.Info("enable orm success")
-	} else {
-		for _, op := range ops {
-			if err := op(app.DBs); err != nil {
-				log.Fatalf("add db failed, %+v", err)
-			}
+		return nil
+	}
+
+	for _, op := range ops {
+		if err := op(app.DBs); err != nil {
+			return fmt.Errorf("add db: %w", err)
 		}
+	}
+	return nil
+}
+
+// EnableDB is the fail-fast compatibility fluent API.
+//
+// Prefer TryEnableDB when the caller needs explicit error handling.
+func (app *Appx) EnableDB(ops ...ormx.Option) *Appx {
+	if err := app.TryEnableDB(ops...); err != nil {
+		panic(err)
 	}
 	return app
 }
@@ -86,11 +119,24 @@ func (app *Appx) EnableCache() *Appx {
 	return app
 }
 
-func (app *Appx) MigratTables(fns ...func() error) *Appx {
-	for _, fn := range fns {
+// MigrateTables executes table migration callbacks and reports the first
+// failure to the caller.
+func (app *Appx) MigrateTables(fns ...func() error) error {
+	for i, fn := range fns {
 		if err := fn(); err != nil {
-			log.Fatalf("init tables failed, %+v", err)
+			return fmt.Errorf("migrate tables callback %d: %w", i, err)
 		}
+	}
+	return nil
+}
+
+// MigratTables is kept for source compatibility with the original misspelled
+// fluent API.
+//
+// Deprecated: use MigrateTables for explicit error handling.
+func (app *Appx) MigratTables(fns ...func() error) *Appx {
+	if err := app.MigrateTables(fns...); err != nil {
+		panic(err)
 	}
 	return app
 }
