@@ -26,11 +26,11 @@ jobs:
       - name: Focused P0 tests
         run: |
           go test ./taskx
-          go test ./resourcex -run '^TestResourcer$'
+          go test ./resourcex -run '^TestResource'
           go test ./webx
           go test ./webx/middleware/accesslog
           go test ./webx/middleware/auth
           go test ./webx/middleware/hashresponse
 
       - name: Focused race tests
-        run: go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse
+        run: go test -race ./resourcex -run '^TestResource' && go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse

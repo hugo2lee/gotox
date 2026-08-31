@@ -12,6 +12,8 @@ package resourcex
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/hugo2lee/gotox/logx"
@@ -19,7 +21,7 @@ import (
 
 type Resource interface {
 	Name() string
-	Close(context.Context, *sync.WaitGroup)
+	Close(context.Context) error
 }
 
 type Resourcex struct {
@@ -33,9 +35,9 @@ func NewResourcex(name string, fn func(ctx context.Context)) *Resourcex {
 
 func (r *Resourcex) Name() string { return r.name }
 
-func (r *Resourcex) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (r *Resourcex) Close(ctx context.Context) error {
 	r.closeFn(ctx)
-	wg.Done()
+	return nil
 }
 
 type GroupOption func(*ResourcexGroup)
@@ -70,22 +72,45 @@ func (r *ResourcexGroup) AddResource(res ...Resource) {
 	}
 }
 
-func (r *ResourcexGroup) CloseAll(ctx context.Context) {
-	wg := new(sync.WaitGroup)
+func (r *ResourcexGroup) CloseAll(ctx context.Context) error {
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(r.resources))
+
 	wg.Add(len(r.resources))
-	for _, f := range r.resources {
-		go f.Close(ctx, wg)
+	for name, resource := range r.resources {
+		name := name
+		resource := resource
+		go func() {
+			defer wg.Done()
+			if err := resource.Close(ctx); err != nil {
+				errCh <- fmt.Errorf("close resource %q: %w", name, err)
+			}
+		}()
 	}
-	wgChan := make(chan struct{})
+
+	done := make(chan struct{})
 	go func() {
 		wg.Wait()
-		close(wgChan)
+		close(done)
 	}()
 
 	select {
 	case <-ctx.Done():
 		r.logger.Info("close resource timeout")
-	case <-wgChan:
-		r.logger.Info("all resource closed")
+		return ctx.Err()
+	case <-done:
+		close(errCh)
 	}
+
+	var closeErrs []error
+	for err := range errCh {
+		closeErrs = append(closeErrs, err)
+		r.logger.Error("%v", err)
+	}
+	if err := errors.Join(closeErrs...); err != nil {
+		return err
+	}
+
+	r.logger.Info("all resource closed")
+	return nil
 }

@@ -147,7 +147,9 @@ func (app *Appx) Run() {
 	}
 
 	if app.ResourcexGroup != nil {
-		app.ResourcexGroup.CloseAll(timeOutCtx)
+		if err := app.ResourcexGroup.CloseAll(timeOutCtx); err != nil {
+			app.Logger.Error("close resources error: %v", err)
+		}
 	}
 
 	app.Logger.Info("App exiting")
