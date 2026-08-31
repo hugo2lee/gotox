@@ -67,8 +67,7 @@ func TestPostRequestTableDriven(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-		body := make([]byte, r.ContentLength)
-		_, err := r.Body.Read(body)
+		body, err := io.ReadAll(r.Body)
 		assert.NoError(t, err)
 
 		if string(body) == `{"title": "foo", "body": "bar", "userId": 1}` {
