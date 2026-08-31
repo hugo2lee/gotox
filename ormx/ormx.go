@@ -14,7 +14,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
@@ -78,15 +77,9 @@ func New(conf *configx.Configx, logCli logx.Logger, ops ...Option) (*Ormx, error
 
 func (orm *Ormx) dialDB(dialer gorm.Dialector, tablePrefix string) (*gorm.DB, error) {
 	db, err := gorm.Open(dialer, &gorm.Config{
-		// 使用 DEBUG 来打印
-		// Logger: glogger.New(gormLoggerFunc(logCli.Debug),
-		// 	glogger.Config{
-		// 		SlowThreshold: 1 * time.Millisecond,
-		// 		LogLevel:      glogger.Info,
-		// 	}),
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,        // 使用单数表名
-			TablePrefix:   tablePrefix, // 表名前缀
+			SingularTable: true,
+			TablePrefix:   tablePrefix,
 		},
 	})
 	if err != nil {
@@ -102,7 +95,6 @@ func (orm *Ormx) dialDB(dialer gorm.Dialector, tablePrefix string) (*gorm.DB, er
 		return nil, err
 	}
 
-	// make sure schema exists
 	if dialer.Name() == POSTGRES {
 		ns := strings.SplitN(tablePrefix, ".", 2)
 		if len(ns) == 2 {
@@ -156,7 +148,6 @@ func WithMysqlMultipleTableNamePrefix(tableNamePrefixList ...string) Option {
 			case configx.RUNTEST:
 				db = db.Debug()
 			case configx.RUNPROD:
-				// db = db
 			default:
 				db = db.Debug()
 			}
@@ -189,7 +180,6 @@ func WithMysqlMultipleDb(dbNameList ...string) Option {
 			case configx.RUNTEST:
 				db = db.Debug()
 			case configx.RUNPROD:
-				// db = db
 			default:
 				db = db.Debug()
 			}
@@ -252,7 +242,8 @@ func (c *Ormx) Name() string {
 	return "orm"
 }
 
-func (c *Ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Ormx) Close(ctx context.Context) error {
+	var closeErr error
 	for name, gor := range c.gorms {
 		if name == DefaultMysqlProjectName {
 			name = "default"
@@ -260,16 +251,23 @@ func (c *Ormx) Close(ctx context.Context, wg *sync.WaitGroup) {
 		db, err := gor.DB()
 		if err != nil {
 			c.logger.Error("gorm %s DB get %v", name, err)
-			return
+			if closeErr == nil {
+				closeErr = errors.Wrapf(err, "get gorm %s db", name)
+			}
+			continue
 		}
 		if err := db.Close(); err != nil {
 			c.logger.Error("gorm %s close %v", name, err)
-			return
+			if closeErr == nil {
+				closeErr = errors.Wrapf(err, "close gorm %s db", name)
+			}
 		}
 	}
-
-	wg.Done()
+	if closeErr != nil {
+		return closeErr
+	}
 	c.logger.Info("%s close", c.Name())
+	return nil
 }
 
 type gormLoggerFunc func(msg string, args ...any)
