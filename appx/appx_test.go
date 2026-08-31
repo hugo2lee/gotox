@@ -1,3 +1,5 @@
+//go:build integration
+
 /*
  * @Author: hugo
  * @Date: 2024-05-11 15:05
