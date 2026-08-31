@@ -13,18 +13,36 @@ package serverx
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hugo2lee/gotox/webx/middleware/accesslog"
 	"github.com/hugo2lee/gotox/webx/middleware/auth"
 	"github.com/hugo2lee/gotox/webx/middleware/hashresponse"
-
-	"github.com/gin-gonic/gin"
 )
 
-func (s *Serverx) EnableAccessLog() *Serverx {
-	md := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
+func (s *Serverx) accessLogMiddleware(verbose bool) gin.HandlerFunc {
+	builder := accesslog.NewBuilder(func(ctx context.Context, al accesslog.AccessLog) {
 		s.logger.Info("ACCESS %v", al)
-	}).WithLogger(s.logger).AllowTrace().AllowStamp().AllowQuery().AllowReqBody().AllowRespBody().Build()
-	s.Engine.Use(md)
+	}).WithLogger(s.logger).AllowTrace().AllowStamp()
+
+	if verbose {
+		builder.AllowQuery().AllowReqBody().AllowRespBody()
+	}
+	return builder.Build()
+}
+
+// EnableAccessLog enables metadata-only access logging. Authorization/token
+// values are redacted by the accesslog middleware and request query/body or
+// response body are not persisted by default.
+func (s *Serverx) EnableAccessLog() *Serverx {
+	s.Engine.Use(s.accessLogMiddleware(false))
+	return s
+}
+
+// EnableVerboseAccessLog opts into query, request-body, and response-body
+// logging. Credential headers remain redacted unless callers build the
+// accesslog middleware themselves and explicitly opt into sensitive values.
+func (s *Serverx) EnableVerboseAccessLog() *Serverx {
+	s.Engine.Use(s.accessLogMiddleware(true))
 	return s
 }
 
