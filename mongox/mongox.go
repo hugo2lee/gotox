@@ -12,7 +12,6 @@ package mongox
 
 import (
 	"context"
-	"sync"
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
@@ -45,11 +44,6 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Mongox, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "mongo connect error")
 	}
-	// defer func() {
-	// 	if err = client.Disconnect(context.TODO()); err != nil {
-	// 		panic(err)
-	// 	}
-	// }()
 
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		return nil, errors.Wrap(err, "mongo ping error")
@@ -65,11 +59,11 @@ func (c *Mongox) DB() *mongo.Database {
 	return c.mongo
 }
 
-func (c *Mongox) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Mongox) Close(ctx context.Context) error {
 	if err := c.mongo.Client().Disconnect(ctx); err != nil {
 		c.logger.Error("mongo close error %v", err)
-		return
+		return err
 	}
-	wg.Done()
 	c.logger.Info("%s close", c.Name())
+	return nil
 }
