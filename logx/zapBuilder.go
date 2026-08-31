@@ -11,7 +11,7 @@
 package logx
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path"
 
@@ -26,28 +26,28 @@ const (
 	DEFAULTLOGLEVEl = "dev"
 )
 
-func zapLoggerBuilder(filePath, env string) zapcore.Core {
+func zapLoggerBuilder(filePath, env string) (zapcore.Core, error) {
 	if filePath == "" {
 		filePath = DEFAULTLOGFILE
 	}
 	if env == "" {
 		env = DEFAULTLOGLEVEl
 	}
-	writer := zapcore.NewMultiWriteSyncer(getLogWriter(filePath), zapcore.AddSync(os.Stdout))
+
+	fileWriter, err := getLogWriter(filePath)
+	if err != nil {
+		return nil, err
+	}
+	writer := zapcore.NewMultiWriteSyncer(fileWriter, zapcore.AddSync(os.Stdout))
 	encoder := getLogEncoder(env)
 	level := getLogLevel(env)
-	return zapcore.NewCore(encoder, writer, level)
+	return zapcore.NewCore(encoder, writer, level), nil
 }
 
-func getLogWriter(filePath string) zapcore.WriteSyncer {
+func getLogWriter(filePath string) (zapcore.WriteSyncer, error) {
 	if err := os.MkdirAll(path.Dir(filePath), 0o755); err != nil {
-		log.Fatalf("getLogWriter MkdirAll error: %s \n", err)
+		return nil, fmt.Errorf("create log directory %s: %w", path.Dir(filePath), err)
 	}
-
-	// fs, err := os.OpenFile(dir, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	// if err != nil {
-	// log.Fatalf("getLogWriter OpenFile error: %s \n", err)
-	// }
 
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   filePath,
@@ -57,7 +57,7 @@ func getLogWriter(filePath string) zapcore.WriteSyncer {
 		Compress:   false,
 	}
 
-	return zapcore.AddSync(lumberJackLogger)
+	return zapcore.AddSync(lumberJackLogger), nil
 }
 
 func getLogEncoder(env string) zapcore.Encoder {
@@ -75,7 +75,6 @@ func getLogEncoder(env string) zapcore.Encoder {
 
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	// return zapcore.NewJSONEncoder(encoderConfig)
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 

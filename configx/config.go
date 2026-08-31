@@ -11,6 +11,7 @@
 package configx
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
@@ -33,14 +34,22 @@ type Configx struct {
 	mode  string
 	path  string
 	viper *viper.Viper
+	err   error
 }
 
 type Option func(*Configx)
 
+func (c *Configx) setError(err error) {
+	if c.err == nil {
+		c.err = err
+	}
+}
+
 func WithMode(mode string) Option {
 	return func(cli *Configx) {
 		if mode != RUNDEV && mode != RUNPROD && mode != RUNTEST {
-			log.Fatalf("invalid mode: %s! only support: %s, %s, %s", mode, RUNDEV, RUNPROD, RUNTEST)
+			cli.setError(fmt.Errorf("invalid mode %q: only support %s, %s, %s", mode, RUNDEV, RUNPROD, RUNTEST))
+			return
 		}
 		cli.mode = mode
 	}
@@ -49,37 +58,35 @@ func WithMode(mode string) Option {
 func WithPath(path string) Option {
 	return func(cli *Configx) {
 		if path == "" {
-			log.Fatalf("invalid path: %s", path)
+			cli.setError(fmt.Errorf("config path must not be empty"))
+			return
 		}
 		cli.path = path
 	}
 }
 
-func New(options ...Option) *Configx {
-	// 初始化配置过程中可以直接panic
-
+// Load reads configuration and returns initialization errors to the caller.
+// Prefer this path when the composition root needs to decide whether to exit,
+// retry, report, or recover from configuration failures.
+func Load(options ...Option) (*Configx, error) {
 	cli := &Configx{}
 	for _, opt := range options {
 		opt(cli)
 	}
+	if cli.err != nil {
+		return nil, cli.err
+	}
 
 	v := viper.New()
 	v.SetConfigType(DEFAULTCONFIGTYPE)
-
-	// 先设置默认值
 	v.SetDefault(RUNMODESTR, DEFAULTMODE)
-	// v.SetEnvPrefix("go")          // 设置环境变量的前缀
 
-	// 再绑定环境变量
-	err := v.BindEnv(RUNMODESTR)
-	if err != nil {
-		log.Fatalf("config BindEnv error: %s \n", err)
+	if err := v.BindEnv(RUNMODESTR); err != nil {
+		return nil, fmt.Errorf("bind %s environment variable: %w", RUNMODESTR, err)
 	}
 
-	// 手动指定的优先级最高
 	if cli.mode != "" {
 		v.Set(RUNMODESTR, cli.mode)
-		// 配置的文件名
 		v.SetConfigName(cli.mode)
 	} else {
 		v.SetConfigName(v.GetString(RUNMODESTR))
@@ -94,13 +101,23 @@ func New(options ...Option) *Configx {
 	}
 
 	if err := v.ReadInConfig(); err != nil {
-		log.Fatalf("Fatal error config file: %s \n", err)
+		return nil, fmt.Errorf("read %s config from %s: %w", cli.mode, cli.path, err)
 	}
 
 	log.Printf("Using config mode: %s, file: %s \n", v.GetString(RUNMODESTR), v.ConfigFileUsed())
-
 	cli.viper = v
+	return cli, nil
+}
 
+// New is the fail-fast compatibility constructor.
+//
+// Prefer Load when the caller needs explicit error handling. New panics on
+// initialization failure rather than terminating the process with log.Fatal.
+func New(options ...Option) *Configx {
+	cli, err := Load(options...)
+	if err != nil {
+		panic(err)
+	}
 	return cli
 }
 

@@ -29,10 +29,28 @@ type Logx struct {
 	logger *zap.Logger
 }
 
-func New(conf *configx.Configx) *Logx {
-	zaplog := zap.New(zapLoggerBuilder(conf.LogDir(), conf.Mode()), zap.AddCaller(), zap.AddCallerSkip(1))
+// Open constructs the configured logger and returns filesystem/setup errors to
+// the caller.
+func Open(conf *configx.Configx) (*Logx, error) {
+	core, err := zapLoggerBuilder(conf.LogDir(), conf.Mode())
+	if err != nil {
+		return nil, err
+	}
+	zaplog := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	cli := &Logx{logger: zaplog}
 	cli.Info("Logger is ready")
+	return cli, nil
+}
+
+// New is the fail-fast compatibility constructor.
+//
+// Prefer Open when the caller needs explicit error handling. New panics on
+// initialization failure rather than terminating the process.
+func New(conf *configx.Configx) *Logx {
+	cli, err := Open(conf)
+	if err != nil {
+		panic(err)
+	}
 	return cli
 }
 
