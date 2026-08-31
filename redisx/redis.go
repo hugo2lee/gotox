@@ -13,7 +13,6 @@ package redisx
 
 import (
 	"context"
-	"sync"
 
 	"github.com/hugo2lee/gotox/configx"
 	"github.com/hugo2lee/gotox/logx"
@@ -58,11 +57,11 @@ func (c *Redisx) DB() *redis.Client {
 	return c.rds
 }
 
-func (c *Redisx) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Redisx) Close(ctx context.Context) error {
 	if err := c.DB().Close(); err != nil {
 		c.logger.Error("redis close error %v", err)
-		return
+		return err
 	}
-	wg.Done()
 	c.logger.Info("%s close", c.Name())
+	return nil
 }
