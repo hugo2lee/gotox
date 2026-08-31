@@ -29,7 +29,16 @@ type Mongox struct {
 	logger logx.Logger
 }
 
-func New(conf *configx.Configx, logCli logx.Logger) (*Mongox, error) {
+// NewWithDatabase wires an existing Mongo database into Mongox without network I/O.
+func NewWithDatabase(database *mongo.Database, logger logx.Logger) *Mongox {
+	if logger == nil {
+		logger = logx.NewNoOpLogger()
+	}
+	return &Mongox{mongo: database, logger: logger}
+}
+
+// Dial creates, verifies, and selects a Mongo database from configuration.
+func Dial(ctx context.Context, conf *configx.Configx, logger logx.Logger) (*Mongox, error) {
 	uri := conf.MongoUri()
 	if uri == "" {
 		return nil, errors.New("mongo uri is empty")
@@ -40,15 +49,25 @@ func New(conf *configx.Configx, logCli logx.Logger) (*Mongox, error) {
 		return nil, errors.New("mongo dbName is empty")
 	}
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, errors.Wrap(err, "mongo connect error")
 	}
 
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		_ = client.Disconnect(context.Background())
 		return nil, errors.Wrap(err, "mongo ping error")
 	}
-	return &Mongox{mongo: client.Database(dbName), logger: logCli}, nil
+
+	return NewWithDatabase(client.Database(dbName), logger), nil
+}
+
+// New is the compatibility constructor that dials Mongo immediately.
+//
+// Deprecated: use Dial when connection ownership belongs here, or
+// NewWithDatabase when the caller/composition root already owns the client.
+func New(conf *configx.Configx, logger logx.Logger) (*Mongox, error) {
+	return Dial(context.Background(), conf, logger)
 }
 
 func (c *Mongox) Name() string {
