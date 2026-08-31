@@ -26,6 +26,19 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+func TestOrmxDatabaseWiring(t *testing.T) {
+	defaultDB := &gorm.DB{}
+	namedDB := &gorm.DB{}
+
+	orm := ormx.NewWithDBs(nil, nil, map[string]*gorm.DB{
+		ormx.DefaultProjectName: defaultDB,
+		"named":                namedDB,
+	})
+
+	assert.Same(t, defaultDB, orm.GetDB())
+	assert.Same(t, namedDB, orm.GetDB("named"))
+}
+
 func TestDefaultDB(t *testing.T) {
 	t.Parallel()
 	conf := configx.New(configx.WithPath("../conf"))
@@ -123,7 +136,7 @@ func TestGormMysql(t *testing.T) {
 		mysql.Open(dsn),
 		&gorm.Config{
 			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
+				SingularTable: true,
 			},
 		})
 	assert.NoError(t, err)
@@ -144,7 +157,7 @@ func TestGormPostgres(t *testing.T) {
 		postgres.Open(dsn),
 		&gorm.Config{
 			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
+				SingularTable: true,
 			},
 		})
 	assert.NoError(t, err)
@@ -183,7 +196,7 @@ func TestGormBaseModel(t *testing.T) {
 		mysql.Open(dsn),
 		&gorm.Config{
 			NamingStrategy: schema.NamingStrategy{
-				SingularTable: true, // 使用单数表名
+				SingularTable: true,
 			},
 		})
 	assert.NoError(t, err)
