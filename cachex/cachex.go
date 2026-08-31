@@ -12,7 +12,6 @@ package cachex
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/hugo2lee/gotox/resourcex"
@@ -30,7 +29,7 @@ type Cachexer interface {
 	Get(key string) (any, bool)
 	Delete(key string)
 	Flush()
-	Close(ctx context.Context, wg *sync.WaitGroup)
+	Close(ctx context.Context) error
 }
 
 type Cachex struct {
@@ -70,7 +69,7 @@ func (c *Cachex) Set(key string, value any) {
 	c.Cache.Set(key, value, cache.DefaultExpiration)
 }
 
-func (c *Cachex) Close(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Cachex) Close(ctx context.Context) error {
 	c.Cache.Flush()
-	wg.Done()
+	return nil
 }
