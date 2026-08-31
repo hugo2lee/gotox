@@ -29,6 +29,7 @@ jobs:
           go test ./resourcex -run '^TestResource'
           go test ./redisx -run '^TestRedisClientWiring$'
           go test ./mongox -run '^TestMongoDatabaseWiring$'
+          go test ./ormx -run '^TestOrmxDatabaseWiring$'
           go test ./webx
           go test ./webx/middleware/accesslog
           go test ./webx/middleware/auth
@@ -39,4 +40,5 @@ jobs:
           go test -race ./resourcex -run '^TestResource'
           go test -race ./redisx -run '^TestRedisClientWiring$'
           go test -race ./mongox -run '^TestMongoDatabaseWiring$'
+          go test -race ./ormx -run '^TestOrmxDatabaseWiring$'
           go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse
