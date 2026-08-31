@@ -11,10 +11,13 @@
 package configx_test
 
 import (
-	"log"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hugo2lee/gotox/configx"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type custom struct {
@@ -26,12 +29,20 @@ func (c custom) LogDir() string {
 }
 
 func TestConfigExample(t *testing.T) {
-	c := configx.New()
-	log.Println(c.LogDir())
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "dev.toml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`
+[log]
+dir = "test.log"
+
+[auths]
+client = "client-auth"
+`), 0o600))
+
+	c := configx.New(configx.WithPath(dir), configx.WithMode(configx.RUNDEV))
+	assert.Equal(t, "test.log", c.LogDir())
 
 	cu := custom{c}
-	log.Println(cu.LogDir())
-
-	aus := cu.Auths()
-	log.Println(aus)
+	assert.Equal(t, "custom log dir", cu.LogDir())
+	assert.Equal(t, map[string]string{"client": "client-auth"}, cu.Auths())
 }
