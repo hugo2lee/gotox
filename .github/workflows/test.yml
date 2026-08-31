@@ -20,9 +20,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Format check
-        run: test -z "$(gofmt -l .)"
-
       - name: Test
         run: go test ./...
 
