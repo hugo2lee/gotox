@@ -23,14 +23,20 @@ jobs:
       - name: Compile all packages and tests
         run: go test -run '^$' ./...
 
-      - name: Focused P0 tests
+      - name: Environment-independent tests
         run: |
           go test ./taskx
           go test ./resourcex -run '^TestResource'
+          go test ./redisx -run '^TestRedisClientWiring$'
+          go test ./mongox -run '^TestMongoDatabaseWiring$'
           go test ./webx
           go test ./webx/middleware/accesslog
           go test ./webx/middleware/auth
           go test ./webx/middleware/hashresponse
 
-      - name: Focused race tests
-        run: go test -race ./resourcex -run '^TestResource' && go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse
+      - name: Environment-independent race tests
+        run: |
+          go test -race ./resourcex -run '^TestResource'
+          go test -race ./redisx -run '^TestRedisClientWiring$'
+          go test -race ./mongox -run '^TestMongoDatabaseWiring$'
+          go test -race ./webx ./webx/middleware/accesslog ./webx/middleware/auth ./webx/middleware/hashresponse
