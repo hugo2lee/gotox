@@ -24,11 +24,17 @@ jobs:
       - name: Upgrade residual vulnerable modules
         run: |
           go get \
-            github.com/yuin/goldmark@v1.8.5 \
-            golang.org/x/mod@v0.40.0 \
             gopkg.in/yaml.v2@v2.4.0 \
             golang.org/x/arch@v0.30.0
           go mod tidy
+
+          # Security floors for modules that remain in the resolved build list
+          # through upstream go.mod requirements even though gotox does not
+          # import their packages directly. Do not run tidy after these pins.
+          go get \
+            github.com/yuin/goldmark@v1.8.5 \
+            golang.org/x/mod@v0.40.0
+          go mod download
 
       - name: Verify reachable vulnerabilities
         run: |
@@ -44,6 +50,7 @@ jobs:
           import urllib.request
 
           findings = []
+          go_only = []
           for raw in open('modules.txt', encoding='utf-8'):
               raw = raw.strip()
               if not raw:
@@ -64,24 +71,33 @@ jobs:
               for vuln in result.get('vulns', []):
                   aliases = vuln.get('aliases', [])
                   external = [a for a in aliases if a.startswith('CVE-') or a.startswith('GHSA-')]
+                  item = {
+                      'module': name,
+                      'version': version,
+                      'id': vuln.get('id'),
+                      'aliases': aliases,
+                      'summary': vuln.get('summary', ''),
+                  }
                   if external:
-                      findings.append((name, version, vuln.get('id'), external, vuln.get('summary', '')))
+                      findings.append(item)
+                  else:
+                      go_only.append(item)
 
           print('=== RESIDUAL CVE/GHSA FINDINGS ===')
           for item in findings:
-              print(json.dumps({
-                  'module': item[0],
-                  'version': item[1],
-                  'id': item[2],
-                  'aliases': item[3],
-                  'summary': item[4],
-              }, ensure_ascii=False, sort_keys=True))
+              print(json.dumps(item, ensure_ascii=False, sort_keys=True))
           print(f'RESIDUAL_EXTERNAL_FINDING_COUNT={len(findings)}')
+
+          print('=== GO-ONLY ADVISORIES ===')
+          for item in go_only:
+              print(json.dumps(item, ensure_ascii=False, sort_keys=True))
+          print(f'GO_ONLY_ADVISORY_COUNT={len(go_only)}')
+
           if findings:
               sys.exit(1)
           PY
 
-      - name: Show residual Go-only advisories
+      - name: Explain any Go-only residuals
         run: |
           echo '=== WHY x/crypto ==='
           go mod why -m golang.org/x/crypto || true
