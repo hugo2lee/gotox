@@ -46,18 +46,12 @@ func New(opt ...configx.Option) *Appx {
 	}
 }
 
-func WithConfigPath(path string) configx.Option {
-	return configx.WithPath(path)
-}
-
-func WithConfigMode(mode string) configx.Option {
-	return configx.WithMode(mode)
-}
+func WithConfigPath(path string) configx.Option { return configx.WithPath(path) }
+func WithConfigMode(mode string) configx.Option { return configx.WithMode(mode) }
 
 func (app *Appx) addResource(res resourcex.Resource) {
-	resourcex.SetLogger(app.Logger)
 	if app.ResourcexGroup == nil {
-		app.ResourcexGroup = resourcex.NewResourcexGroup()
+		app.ResourcexGroup = resourcex.NewResourcexGroup(resourcex.WithLogger(app.Logger))
 	}
 	app.ResourcexGroup.AddResource(res)
 }
@@ -72,25 +66,21 @@ func (app *Appx) EnableDB(ops ...ormx.Option) *Appx {
 		app.addResource(app.DBs)
 		app.Logger.Info("enable orm success")
 	} else {
-		// for _, name := range projectName {
-		// 	if _, err := app.DBs.AddDB(name); err != nil {
-		// 		log.Fatalf("add db %s failed, %+v", projectName, err)
-		// 	}
-		// }
 		for _, op := range ops {
 			if err := op(app.DBs); err != nil {
 				log.Fatalf("add db failed, %+v", err)
 			}
 		}
 	}
-
 	return app
 }
 
 func (app *Appx) EnableCache() *Appx {
-	ca := cachex.New(cachex.WithExpiration(time.Duration(app.Configx.CachexDefaultExpiration())*time.Second), cachex.WithCleanupInterval(time.Duration(app.Configx.CachexCleanupInterval())*time.Second))
+	ca := cachex.New(
+		cachex.WithExpiration(time.Duration(app.Configx.CachexDefaultExpiration())*time.Second),
+		cachex.WithCleanupInterval(time.Duration(app.Configx.CachexCleanupInterval())*time.Second),
+	)
 	app.Cachex = ca
-
 	app.addResource(app.Cachex)
 	app.Logger.Info("enable cache success")
 	return app
@@ -120,13 +110,11 @@ func (app *Appx) EnableWebServer() *Appx {
 		EnableAuth()
 	app.Serverx = srv
 	app.Logger.Info("init server success")
-
 	return app
 }
 
 func (app *Appx) EnableTasks(taskGenFuncs ...func() taskx.Task) *Appx {
-	taskx.SetLogger(app.Logger)
-	app.TaskxGroup = taskx.NewTaskxGroup()
+	app.TaskxGroup = taskx.NewTaskxGroup(taskx.WithLogger(app.Logger))
 	for _, taskGen := range taskGenFuncs {
 		app.TaskxGroup.AddTask(taskGen())
 	}
@@ -146,24 +134,20 @@ func (app *Appx) Run() {
 		go app.Serverx.GracefullyUp(notifyStop)
 	}
 
-	// 等待中断信号以优雅地关闭服务器
 	<-notifyCtx.Done()
 	app.Logger.Info("shutting down gracefully in 15 seconds..., press Ctrl+C again to force")
 	timeOutCtx, timeOutCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer timeOutCancel()
 
 	if app.Serverx != nil {
-		// http带超时关闭
 		if err := app.Serverx.GracefullyDown(timeOutCtx); err != nil {
 			app.Logger.Error("http server Shutdown error: %v \n", err)
 		}
 		app.Logger.Info("http server close")
 	}
 
-	{
-		if app.ResourcexGroup != nil {
-			app.ResourcexGroup.CloseAll(timeOutCtx)
-		}
+	if app.ResourcexGroup != nil {
+		app.ResourcexGroup.CloseAll(timeOutCtx)
 	}
 
 	app.Logger.Info("App exiting")
